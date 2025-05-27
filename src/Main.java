@@ -1,3 +1,4 @@
+
 import models.Mail;
 import models.User;
 import models.UserMail;
@@ -21,38 +22,60 @@ public class Main {
         try (Connection connection = Database.getConnection()) {
             UserDao userDao = new UserDaoImpl(connection);
             MailDao mailDao = new MailDaoImpl(connection);
-            UserMailDao userMailDao = new UserMailDaoImpl(connection);
+            UserMailDao userMailDao = new UserMailDaoImpl(connection, userDao);
 
-            User sender = new User(UUID.randomUUID(), "Luis", "Maestre", "luis@example.com");
-            User receiver = new User(UUID.randomUUID(), "Ana", "Gómez", "ana@example.com");
-            userDao.save(sender);
-            userDao.save(receiver);
+            User currentUser = new User(UUID.randomUUID(), "Luis", "Maestre", "lmaestre@palermo.edu");
+            userDao.save(currentUser);
 
-            Mail mail = new Mail(
-                    UUID.randomUUID(),
-                    sender,
-                    List.of(receiver),
-                    List.of(),
-                    List.of(),
-                    LocalDateTime.now(),
-                    "¡Hola!",
-                    "Este es un mensaje de prueba."
+            List<User> otherUsers = List.of(
+                    new User(UUID.randomUUID(), "Ana", "Gomez", "ana@palermo.edu"),
+                    new User(UUID.randomUUID(), "Bruno", "Lopez", "bruno@palermo.edu"),
+                    new User(UUID.randomUUID(), "Carla", "Diaz", "carla@palermo.edu"),
+                    new User(UUID.randomUUID(), "David", "Fernandez", "david@palermo.edu"),
+                    new User(UUID.randomUUID(), "Eva", "Martinez", "eva@palermo.edu"),
+                    new User(UUID.randomUUID(), "Franco", "Silva", "franco@palermo.edu"),
+                    new User(UUID.randomUUID(), "Gabriela", "Vega", "gabriela@palermo.edu"),
+                    new User(UUID.randomUUID(), "Hernan", "Rojas", "hernan@palermo.edu"),
+                    new User(UUID.randomUUID(), "Irene", "Castro", "irene@palermo.edu")
             );
-            mailDao.save(mail);
 
-            UserMail userMail = new UserMail(receiver, mail, MailFolder.INBOX);
-            userMailDao.save(userMail);
-
-            userMailDao.markAsRead(receiver, mail);
-
-            List<UserMail> inbox = userMailDao.findByUserAndFolder(receiver, MailFolder.INBOX);
-            for (UserMail um : inbox) {
-                System.out.println("📬 Mail ID: " + um.getMail().getId());
-                System.out.println("🗂️  Carpeta: " + um.getFolder());
-                System.out.println("👁️  Leído: " + um.isRead());
-                System.out.println("🗑️  Eliminado: " + um.isDeleted());
-                System.out.println("--------");
+            for (User u : otherUsers) {
+                userDao.save(u);
             }
+
+            for (int i = 0; i < 5; i++) {
+                User sender = otherUsers.get(i);
+                Mail mail = new Mail(
+                        UUID.randomUUID(),
+                        sender,
+                        List.of(currentUser),
+                        List.of(),
+                        List.of(),
+                        LocalDateTime.now().minusDays(5 - i),
+                        "Mensaje #" + (i + 1) + " para Luis",
+                        "Hola Luis, este es el mensaje " + (i + 1)
+                );
+                mailDao.save(mail);
+                userMailDao.save(new UserMail(currentUser, mail, MailFolder.INBOX));
+            }
+
+            for (int i = 5; i < 9; i++) {
+                User recipient = otherUsers.get(i);
+                Mail mail = new Mail(
+                        UUID.randomUUID(),
+                        currentUser,
+                        List.of(recipient),
+                        List.of(),
+                        List.of(),
+                        LocalDateTime.now().minusDays(i),
+                        "Correo enviado a " + recipient.getName(),
+                        "Hola " + recipient.getName() + ", te escribo este mensaje desde mi cliente de correo."
+                );
+                mailDao.save(mail);
+                userMailDao.save(new UserMail(currentUser, mail, MailFolder.SENT));
+            }
+
+            System.out.println("✅ Base de datos cargada con usuarios y correos.");
 
         } catch (Exception e) {
             e.printStackTrace();

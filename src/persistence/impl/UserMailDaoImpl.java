@@ -3,19 +3,24 @@ package persistence.impl;
 import models.Mail;
 import models.User;
 import models.UserMail;
+import persistence.dao.UserDao;
 import persistence.dao.UserMailDao;
 import utils.MailFolder;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public class UserMailDaoImpl implements UserMailDao {
 
     private final Connection connection;
+    private final UserDao userDao;
 
-    public UserMailDaoImpl(Connection connection) {
+    public UserMailDaoImpl(Connection connection, UserDao userDao) {
         this.connection = connection;
+        this.userDao = userDao;
         createTableIfNotExists();
     }
 
@@ -63,8 +68,12 @@ public class UserMailDaoImpl implements UserMailDao {
     @Override
     public List<UserMail> findByUserAndFolder(User user, MailFolder folder) {
         List<UserMail> result = new ArrayList<>();
-        String sql = "SELECT * FROM user_mails WHERE user_id = ?";
-        if (folder != null) sql += " AND folder = ?";
+        String sql = """
+        SELECT um.*, m.subject, m.message, m.sender_id
+        FROM user_mails um
+        JOIN mails m ON um.mail_id = m.id
+        WHERE um.user_id = ?
+        """ + (folder != null ? " AND um.folder = ?" : "");
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setObject(1, user.getId());
@@ -72,15 +81,29 @@ public class UserMailDaoImpl implements UserMailDao {
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                // Por ahora devolvemos solo los datos de la relación, no reconstruimos Mail completo
-                UserMail um = new UserMail(user, new Mail(rs.getObject("mail_id", java.util.UUID.class), null, null, null, null, null, "", ""),
-                        MailFolder.valueOf(rs.getString("folder")));
-                if (rs.getBoolean("is_read")) um.markAsRead();
-                if (rs.getBoolean("is_deleted")) um.markAsDeleted();
-                result.add(um);
+                UUID mailId = UUID.fromString(rs.getString("mail_id"));
+                UUID senderId = UUID.fromString(rs.getString("sender_id"));
+                Optional<User> sender = userDao.findById(senderId); // ✅ importante
+
+                Mail mail = new Mail(
+                        mailId,
+                        sender.orElse(null), // puede que no lo encuentre
+                        List.of(),  // TO
+                        List.of(),  // CC
+                        List.of(),  // BCC
+                        null,
+                        rs.getString("subject"),
+                        rs.getString("message")
+                );
+
+                UserMail userMail = new UserMail(user, mail, MailFolder.valueOf(rs.getString("folder")));
+                if (rs.getBoolean("is_read")) userMail.markAsRead();
+                if (rs.getBoolean("is_deleted")) userMail.markAsDeleted();
+
+                result.add(userMail);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error retrieving user mails", e);
+            throw new RuntimeException("Error loading userMails", e);
         }
 
         return result;

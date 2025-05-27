@@ -102,4 +102,34 @@ public class MailDaoImpl implements MailDao {
             throw new RuntimeException("Error deleting mail", e);
         }
     }
+
+    @Override
+    public List<Mail> findBySender(User sender) {
+        List<Mail> mails = new ArrayList<>();
+        String sql = "SELECT * FROM mails WHERE sender_id = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setObject(1, sender.getId());
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Mail mail = new Mail(
+                        UUID.fromString(rs.getString("id")),
+                        sender,
+                        List.of(),  // TO: opcional cargar más adelante
+                        List.of(),
+                        List.of(),
+                        rs.getTimestamp("date") != null ? rs.getTimestamp("date").toLocalDateTime() : null,
+                        rs.getString("subject"),
+                        rs.getString("message")
+                );
+                mails.add(mail);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error retrieving mails by sender", e);
+        }
+
+        return mails;
+    }
+
 }

@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 public class Database {
 
-    private static final String URL = "jdbc:h2:./data/mail_client_db"; // archivo persistente
+    private static final String URL = "jdbc:h2:./data/mail_client_db";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
 
