@@ -1,7 +1,7 @@
 package ui;
 
 import models.User;
-import persistence.Database;
+import config.DatabaseConfig;
 import persistence.dao.MailDao;
 import persistence.dao.UserDao;
 import persistence.dao.UserMailDao;
@@ -19,7 +19,7 @@ public class AppContext {
 
     public AppContext() {
         try {
-            Connection connection = Database.getConnection();
+            Connection connection = DatabaseConfig.getConnection();
 
             UserDao userDao = new UserDaoImpl(connection);
             MailDao mailDao = new MailDaoImpl(connection);

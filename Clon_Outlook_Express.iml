@@ -8,5 +8,8 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="h2-2.2.224" level="project" />
+    <orderEntry type="library" name="h2-2.2.224 (2)" level="project" />
+    <orderEntry type="library" name="jakarta.mail-1.6.3" level="project" />
+    <orderEntry type="library" name="jakarta.mail-2.0.1" level="project" />
   </component>
 </module>

@@ -1,12 +1,12 @@
-package persistence;
+package config;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class Database {
+public class DatabaseConfig {
 
-    private static final String URL = "jdbc:h2:./data/mail_client_db";
+    private static final String URL = "jdbc:h2:tcp://localhost/~/outlook_db";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
 
