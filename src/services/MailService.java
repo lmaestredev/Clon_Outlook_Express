@@ -26,4 +26,8 @@ public class MailService {
     public List<Mail> getSent(User user) {
         return mailDao.findBySender(user);
     }
+
+    public List<UserMail> getDrafts(User user) {
+        return userMailDao.findByUserAndFolder(user, MailFolder.DRAFTS);
+    }
 }

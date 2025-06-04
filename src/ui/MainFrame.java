@@ -42,6 +42,9 @@ public class MainFrame extends JFrame {
         sentButton.addActionListener(e -> loadSent());
         foldersPanel.add(sentButton);
 
+        JButton draftsButton = new JButton("📝 DRAFTS");
+        draftsButton.addActionListener(e -> loadDrafts());
+        foldersPanel.add(draftsButton);
 
 
         add(foldersPanel, BorderLayout.WEST);
@@ -91,6 +94,14 @@ public class MainFrame extends JFrame {
         }
     }
 
+    private void loadDrafts() {
+        mailListModel.clear();
+        var userMails = context.mailService.getDrafts(context.currentUser);
+        for (UserMail userMail : userMails) {
+            mailListModel.addElement(userMail.getMail());
+        }
+    }
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -99,3 +110,4 @@ public class MainFrame extends JFrame {
         });
     }
 }
+

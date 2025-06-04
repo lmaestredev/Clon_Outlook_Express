@@ -1,3 +1,5 @@
+import services.MailSenderService;
+
 public class Main {
 
     public static void main(String[] args) {
@@ -65,6 +67,15 @@ public class Main {
 //            e.printStackTrace();
 //        }
 
-
+//        MailSenderService sender = new MailSenderService(
+//                "tu-correo@outlook.com",
+//                "tu-contraseña-real"
+//        );
+//
+//        sender.send(
+//                "otro-correo@gmail.com",
+//                "Correo de prueba desde Outlook SMTP",
+//                "¡Hola! Este correo fue enviado desde Java usando Outlook."
+//        );
     }
 }
