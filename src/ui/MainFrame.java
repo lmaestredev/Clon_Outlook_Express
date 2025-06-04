@@ -1,15 +1,19 @@
 package ui;
 
+import controllers.ContactsController;
 import controllers.MailController;
 import controllers.UserController;
 import models.Mail;
 import models.User;
 import models.UserMail;
+import persistence.dao.ContactDao;
+import persistence.impl.ContactDaoImpl;
 import ui.dialogs.ComposeMailDialog;
+import ui.dialogs.ContactsDialog;
 
 import javax.swing.*;
-
 import java.awt.*;
+import java.sql.Connection;
 
 public class MainFrame extends JFrame {
 
@@ -20,12 +24,14 @@ public class MainFrame extends JFrame {
     private final User currentUser;
     private final MailController mailController;
     private final UserController userController;
+    private final ContactsController contactsController;
 
-    public MainFrame(User currentUser, MailController mailController, UserController userController) {
+    public MainFrame(User currentUser, MailController mailController, UserController userController, ContactsController contactsController) {
         super("Cliente de Correo");
         this.currentUser = currentUser;
         this.mailController = mailController;
         this.userController = userController;
+        this.contactsController = contactsController;
 
         setSize(1000, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -53,6 +59,12 @@ public class MainFrame extends JFrame {
         JButton draftsButton = new JButton("📝 DRAFTS");
         draftsButton.addActionListener(e -> loadDrafts());
         foldersPanel.add(draftsButton);
+
+        JButton contactsButton = new JButton("👥 Contactos");
+        contactsButton.addActionListener(e -> {
+            new ContactsDialog(this, contactsController).setVisible(true);
+        });
+        foldersPanel.add(contactsButton);
 
         JButton composeButton = new JButton("✉️ Redactar");
         composeButton.addActionListener(e -> {
@@ -119,11 +131,12 @@ public class MainFrame extends JFrame {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try {
-                var connection = config.DatabaseConfig.getConnection();
+                Connection connection = config.DatabaseConfig.getConnection();
                 
                 var userDao = new persistence.impl.UserDaoImpl(connection);
                 var mailDao = new persistence.impl.MailDaoImpl(connection);
                 var userMailDao = new persistence.impl.UserMailDaoImpl(connection, userDao);
+                var contactDao = new ContactDaoImpl(connection);
                 
                 var mailSenderService = new services.InternalMailSenderService(mailDao, userMailDao, new config.MailServerConfig("localhost", 25, "", "", false, false));
                 
@@ -133,7 +146,9 @@ public class MainFrame extends JFrame {
                 var currentUser = userController.findByEmail("lmaestre@palermo.edu")
                         .orElseThrow(() -> new RuntimeException("Usuario lmaestre@palermo.edu no encontrado"));
                 
-                new MainFrame(currentUser, mailController, userController).setVisible(true);
+                var contactsController = new controllers.ContactsController(contactDao, currentUser);
+                
+                new MainFrame(currentUser, mailController, userController, contactsController).setVisible(true);
             } catch (Exception e) {
                 throw new RuntimeException("Error inicializando la aplicación", e);
             }

@@ -1,6 +1,7 @@
 package persistence.impl;
 
 import models.Contact;
+import models.User;
 import persistence.dao.ContactDao;
 
 import java.sql.*;
@@ -28,8 +29,8 @@ public class ContactDaoImpl implements ContactDao {
             )
         """;
 
-        String userContactsSql = """
-            CREATE TABLE IF NOT EXISTS user_contacts (
+        String contactBookSql = """
+            CREATE TABLE IF NOT EXISTS contact_book (
                 user_id UUID,
                 contact_id UUID,
                 PRIMARY KEY (user_id, contact_id),
@@ -40,7 +41,7 @@ public class ContactDaoImpl implements ContactDao {
 
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(contactsSql);
-            stmt.execute(userContactsSql);
+            stmt.execute(contactBookSql);
         } catch (SQLException e) {
             throw new RuntimeException("Error creating contact tables", e);
         }
@@ -65,11 +66,11 @@ public class ContactDaoImpl implements ContactDao {
     }
 
     @Override
-    public void linkToUser(UUID userId, UUID contactId) {
-        String sql = "INSERT INTO user_contacts (user_id, contact_id) VALUES (?, ?)";
+    public void linkToUser(User user, Contact contact) {
+        String sql = "INSERT INTO contact_book (user_id, contact_id) VALUES (?, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setObject(1, userId);
-            ps.setObject(2, contactId);
+            ps.setObject(1, user.getId());
+            ps.setObject(2, contact.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
             if (e.getErrorCode() == 23505) {
@@ -81,16 +82,28 @@ public class ContactDaoImpl implements ContactDao {
     }
 
     @Override
-    public List<Contact> findByUser(UUID userId) {
+    public void unlinkFromUser(User user, Contact contact) {
+        String sql = "DELETE FROM contact_book WHERE user_id = ? AND contact_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setObject(1, user.getId());
+            ps.setObject(2, contact.getId());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("❌ Error desvinculando contacto del usuario", e);
+        }
+    }
+
+    @Override
+    public List<Contact> findByUser(User user) {
         String sql = """
             SELECT c.* FROM contacts c
-            JOIN user_contacts uc ON c.id = uc.contact_id
-            WHERE uc.user_id = ?
+            JOIN contact_book cb ON c.id = cb.contact_id
+            WHERE cb.user_id = ?
         """;
 
         List<Contact> contacts = new ArrayList<>();
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setObject(1, userId);
+            ps.setObject(1, user.getId());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 contacts.add(mapRow(rs));
@@ -115,6 +128,17 @@ public class ContactDaoImpl implements ContactDao {
             throw new RuntimeException("❌ Error buscando contacto por email", e);
         }
         return Optional.empty();
+    }
+
+    @Override
+    public void delete(Contact contact) {
+        String sql = "DELETE FROM contacts WHERE id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setObject(1, contact.getId());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("❌ Error eliminando contacto", e);
+        }
     }
 
     private Contact mapRow(ResultSet rs) throws SQLException {
