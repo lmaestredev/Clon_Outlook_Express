@@ -1,7 +1,11 @@
 package ui;
 
+import controllers.MailController;
+import controllers.UserController;
 import models.Mail;
+import models.User;
 import models.UserMail;
+import ui.dialogs.ComposeMailDialog;
 
 import javax.swing.*;
 
@@ -13,11 +17,15 @@ public class MainFrame extends JFrame {
     private final JList<Mail> mailList = new JList<>(mailListModel);
     private final JTextArea messageView = new JTextArea();
 
-    private final AppContext context;
+    private final User currentUser;
+    private final MailController mailController;
+    private final UserController userController;
 
-    public MainFrame(AppContext context) {
+    public MainFrame(User currentUser, MailController mailController, UserController userController) {
         super("Cliente de Correo");
-        this.context = context;
+        this.currentUser = currentUser;
+        this.mailController = mailController;
+        this.userController = userController;
 
         setSize(1000, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -46,6 +54,12 @@ public class MainFrame extends JFrame {
         draftsButton.addActionListener(e -> loadDrafts());
         foldersPanel.add(draftsButton);
 
+        JButton composeButton = new JButton("✉️ Redactar");
+        composeButton.addActionListener(e -> {
+            var allUsers = userController.findAllExcept(currentUser);
+            new ComposeMailDialog(this, mailController, currentUser, allUsers).setVisible(true);
+        });
+        foldersPanel.add(composeButton);
 
         add(foldersPanel, BorderLayout.WEST);
 
@@ -80,7 +94,7 @@ public class MainFrame extends JFrame {
 
     private void loadInbox() {
         mailListModel.clear();
-        var userMails = context.mailService.getInbox(context.currentUser);
+        var userMails = mailController.getInbox(currentUser);
         for (UserMail userMail : userMails) {
             mailListModel.addElement(userMail.getMail());
         }
@@ -88,7 +102,7 @@ public class MainFrame extends JFrame {
 
     private void loadSent() {
         mailListModel.clear();
-        var sentMails = context.mailService.getSent(context.currentUser);
+        var sentMails = mailController.getSent(currentUser);
         for (Mail mail : sentMails) {
             mailListModel.addElement(mail);
         }
@@ -96,17 +110,33 @@ public class MainFrame extends JFrame {
 
     private void loadDrafts() {
         mailListModel.clear();
-        var userMails = context.mailService.getDrafts(context.currentUser);
+        var userMails = mailController.getDrafts(currentUser);
         for (UserMail userMail : userMails) {
             mailListModel.addElement(userMail.getMail());
         }
     }
 
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            AppContext context = new AppContext();
-            new MainFrame(context).setVisible(true);
+            try {
+                var connection = config.DatabaseConfig.getConnection();
+                
+                var userDao = new persistence.impl.UserDaoImpl(connection);
+                var mailDao = new persistence.impl.MailDaoImpl(connection);
+                var userMailDao = new persistence.impl.UserMailDaoImpl(connection, userDao);
+                
+                var mailSenderService = new services.InternalMailSenderService(mailDao, userMailDao, new config.MailServerConfig("localhost", 25, "", "", false, false));
+                
+                var userController = new controllers.UserController(userDao);
+                var mailController = new controllers.MailController(mailDao, userMailDao, mailSenderService);
+                
+                var currentUser = userController.findByEmail("lmaestre@palermo.edu")
+                        .orElseThrow(() -> new RuntimeException("Usuario lmaestre@palermo.edu no encontrado"));
+                
+                new MainFrame(currentUser, mailController, userController).setVisible(true);
+            } catch (Exception e) {
+                throw new RuntimeException("Error inicializando la aplicación", e);
+            }
         });
     }
 }
