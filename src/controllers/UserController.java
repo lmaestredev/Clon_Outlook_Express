@@ -21,12 +21,6 @@ public class UserController {
         return userDao.findAll();
     }
 
-    public List<User> findAllExcept(User user) {
-        return userDao.findAll().stream()
-                .filter(u -> !u.getEmail().equals(user.getEmail()))
-                .toList();
-    }
-
     public void save(User user) {
         userDao.save(user);
     }
