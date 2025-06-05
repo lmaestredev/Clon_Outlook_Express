@@ -21,12 +21,12 @@ public class MailController {
 
     public void sendMail(User from, String to, String cc, String bcc, String subject, String message) {
         if (from == null) {
-            throw new IllegalArgumentException("Sender cannot be null");
+            throw new IllegalArgumentException("El remitente no puede ser nulo");
         }
 
         List<User> recipients = parseEmails(to);
         if (recipients.isEmpty()) {
-            throw new IllegalArgumentException("At least one recipient is required");
+            throw new IllegalArgumentException("Se requiere al menos un destinatario");
         }
 
         List<User> ccList = parseEmails(cc);
@@ -57,7 +57,7 @@ public class MailController {
 
     public Mail createDraft(User user, String to, String cc, String bcc, String subject, String message) {
         if (user == null) {
-            throw new IllegalArgumentException("User cannot be null");
+            throw new IllegalArgumentException("El usuario no puede ser nulo");
         }
 
         List<User> recipients = parseEmails(to);
@@ -69,7 +69,7 @@ public class MailController {
 
     public void updateDraft(Mail draft, String to, String cc, String bcc, String subject, String message) {
         if (draft == null) {
-            throw new IllegalArgumentException("Draft cannot be null");
+            throw new IllegalArgumentException("El borrador no puede ser nulo");
         }
 
         List<User> recipients = parseEmails(to);

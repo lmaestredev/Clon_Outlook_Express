@@ -28,7 +28,7 @@ public class UserDaoImpl implements UserDao {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
-            throw new RuntimeException("Error creating users table", e);
+            throw new RuntimeException("Error al crear la tabla de usuarios", e);
         }
     }
 
@@ -61,7 +61,7 @@ public class UserDaoImpl implements UserDao {
                 return Optional.of(mapRow(rs));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error finding user by id", e);
+            throw new RuntimeException("Error al buscar usuario por id", e);
         }
         return Optional.empty();
     }
@@ -76,7 +76,7 @@ public class UserDaoImpl implements UserDao {
                 return Optional.of(mapRow(rs));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error finding user by email", e);
+            throw new RuntimeException("Error al buscar usuario por email", e);
         }
         return Optional.empty();
     }
@@ -91,7 +91,7 @@ public class UserDaoImpl implements UserDao {
                 users.add(mapRow(rs));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error retrieving all users", e);
+            throw new RuntimeException("Error al recuperar todos los usuarios", e);
         }
         return users;
     }
@@ -103,7 +103,7 @@ public class UserDaoImpl implements UserDao {
             ps.setObject(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Error deleting user", e);
+            throw new RuntimeException("Error al eliminar el usuario", e);
         }
     }
 

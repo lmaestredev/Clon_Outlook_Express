@@ -10,7 +10,6 @@ import utils.MailFolder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,7 +75,7 @@ public class InternalMailService {
 
     public Mail createDraft(User user, List<User> recipients, List<User> cc, List<User> bcc, String subject, String message) {
         if (user == null) {
-            throw new IllegalArgumentException("User cannot be null");
+            throw new IllegalArgumentException("El usuario no puede ser nulo");
         }
 
         Mail draft = new Mail(
@@ -100,7 +99,7 @@ public class InternalMailService {
 
     public void updateDraft(Mail draft, List<User> recipients, List<User> cc, List<User> bcc, String subject, String message) {
         if (draft == null) {
-            throw new IllegalArgumentException("Draft cannot be null");
+            throw new IllegalArgumentException("El borrador no puede ser nulo");
         }
 
         draft.setRecipients(recipients);
@@ -124,10 +123,10 @@ public class InternalMailService {
 
     public void sendMail(User sender, List<User> recipients, List<User> cc, List<User> bcc, String subject, String message) {
         if (sender == null) {
-            throw new IllegalArgumentException("Sender cannot be null");
+            throw new IllegalArgumentException("El remitente no puede ser nulo");
         }
         if (recipients == null || recipients.isEmpty()) {
-            throw new IllegalArgumentException("At least one recipient is required");
+            throw new IllegalArgumentException("Se requiere al menos un destinatario");
         }
 
         Mail mail = new Mail(

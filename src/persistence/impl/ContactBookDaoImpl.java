@@ -40,10 +40,10 @@ public class ContactBookDaoImpl implements ContactBookDao {
     @Override
     public void save(User user, User contact) {
         if (user == null || contact == null) {
-            throw new IllegalArgumentException("User and contact cannot be null");
+            throw new IllegalArgumentException("El usuario y el contacto no pueden ser nulos");
         }
         if (user.getId() == null || contact.getId() == null) {
-            throw new IllegalArgumentException("User and contact must have valid IDs");
+            throw new IllegalArgumentException("El usuario y el contacto deben tener IDs válidos");
         }
         
         String sql = "INSERT INTO contact_book (user_id, contact_id) VALUES (?, ?)";
@@ -54,13 +54,13 @@ public class ContactBookDaoImpl implements ContactBookDao {
         } catch (SQLException e) {
             if (e.getSQLState().equals("23505")) { // Unique violation
                 System.out.println(e.getMessage());
-                throw new RuntimeException("Contact already exists", e);
+                throw new RuntimeException("El contacto ya existe", e);
             } else if (e.getSQLState().equals("23503")) { // Foreign key violation
                 System.out.println(e.getMessage());
-                throw new RuntimeException("Invalid user or contact ID", e);
+                throw new RuntimeException("ID de usuario o contacto inválido", e);
             }
             System.out.println(e.getMessage());
-            throw new RuntimeException("Error saving contact: " + e.getMessage(), e);
+            throw new RuntimeException("Error al guardar el contacto: " + e.getMessage(), e);
         }
     }
 

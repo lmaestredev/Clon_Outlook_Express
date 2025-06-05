@@ -46,7 +46,7 @@ public class MailDaoImpl implements MailDao {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
-            throw new RuntimeException("Error creating mails tables: " + e.getMessage(), e);
+            throw new RuntimeException("Error al crear las tablas de correos: " + e.getMessage(), e);
         }
     }
 
@@ -78,7 +78,7 @@ public class MailDaoImpl implements MailDao {
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
-                throw e;
+                throw new RuntimeException("Error al guardar el correo", e);
             } finally {
                 connection.setAutoCommit(true);
             }
@@ -120,7 +120,7 @@ public class MailDaoImpl implements MailDao {
                 connection.commit();
             } catch (SQLException e) {
                 connection.rollback();
-                throw e;
+                throw new RuntimeException("Error al actualizar el correo", e);
             } finally {
                 connection.setAutoCommit(true);
             }
@@ -136,7 +136,7 @@ public class MailDaoImpl implements MailDao {
             ps.setObject(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Error deleting mail", e);
+            throw new RuntimeException("Error al eliminar el correo", e);
         }
     }
 
@@ -192,7 +192,7 @@ public class MailDaoImpl implements MailDao {
             }
             return null;
         } catch (SQLException e) {
-            throw new RuntimeException("Error finding mail by id", e);
+            throw new RuntimeException("Error al buscar el correo por id", e);
         }
     }
 
@@ -247,7 +247,7 @@ public class MailDaoImpl implements MailDao {
                 ));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error finding mails by sender", e);
+            throw new RuntimeException("Error al buscar los correos por remitente", e);
         }
         return mails;
     }

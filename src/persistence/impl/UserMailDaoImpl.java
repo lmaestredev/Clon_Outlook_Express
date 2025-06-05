@@ -38,7 +38,7 @@ public class UserMailDaoImpl implements UserMailDao {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
-            throw new RuntimeException("Error creating user_mails table", e);
+            throw new RuntimeException("Error al crear la tabla user_mails", e);
         }
     }
 
@@ -56,7 +56,7 @@ public class UserMailDaoImpl implements UserMailDao {
             ps.setBoolean(5, userMail.isDeleted());
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Error saving userMail", e);
+            throw new RuntimeException("Error al guardar el correo del usuario", e);
         }
     }
 
@@ -103,7 +103,7 @@ public class UserMailDaoImpl implements UserMailDao {
                 result.add(userMail);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error loading userMails", e);
+            throw new RuntimeException("Error al cargar los correos del usuario", e);
         }
 
         return result;
@@ -127,7 +127,7 @@ public class UserMailDaoImpl implements UserMailDao {
             ps.setObject(2, mail.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Error deleting userMail", e);
+            throw new RuntimeException("Error al eliminar el correo del usuario", e);
         }
     }
 
@@ -139,7 +139,7 @@ public class UserMailDaoImpl implements UserMailDao {
             ps.setObject(3, mail.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Error updating userMail " + column, e);
+            throw new RuntimeException("Error al actualizar el campo '" + column + "' del correo del usuario", e);
         }
     }
 }
