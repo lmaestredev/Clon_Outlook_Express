@@ -3,19 +3,22 @@ package persistence.impl;
 import models.Mail;
 import models.User;
 import persistence.dao.MailDao;
+import persistence.dao.UserDao;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 public class MailDaoImpl implements MailDao {
-
     private final Connection connection;
+    private final UserDao userDao;
 
-    public MailDaoImpl(Connection connection) {
+    public MailDaoImpl(Connection connection, UserDao userDao) {
         this.connection = connection;
+        this.userDao = userDao;
         createTableIfNotExists();
     }
 
@@ -24,78 +27,112 @@ public class MailDaoImpl implements MailDao {
             CREATE TABLE IF NOT EXISTS mails (
                 id UUID PRIMARY KEY,
                 sender_id UUID,
-                date TIMESTAMP,
                 subject VARCHAR(255),
-                message TEXT
+                message TEXT,
+                mail_date TIMESTAMP,
+                cc TEXT,
+                bcc TEXT,
+                FOREIGN KEY (sender_id) REFERENCES users(id)
             );
+            
             CREATE TABLE IF NOT EXISTS mail_recipients (
                 mail_id UUID,
-                user_id UUID,
-                type VARCHAR(10), -- TO, CC, BCC
-                FOREIGN KEY (mail_id) REFERENCES mails(id)
+                recipient_id UUID,
+                PRIMARY KEY (mail_id, recipient_id),
+                FOREIGN KEY (mail_id) REFERENCES mails(id) ON DELETE CASCADE,
+                FOREIGN KEY (recipient_id) REFERENCES users(id)
             );
         """;
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
-            throw new RuntimeException("Error creating mails tables", e);
+            throw new RuntimeException("Error creating mails tables: " + e.getMessage(), e);
         }
     }
 
     @Override
     public void save(Mail mail) {
-        try {
+        String mailSql = "INSERT INTO mails (id, sender_id, subject, message, mail_date, cc, bcc) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String recipientSql = "INSERT INTO mail_recipients (mail_id, recipient_id) VALUES (?, ?)";
+
+        try (PreparedStatement mailPs = connection.prepareStatement(mailSql);
+             PreparedStatement recipientPs = connection.prepareStatement(recipientSql)) {
+            
             connection.setAutoCommit(false);
+            try {
+                mailPs.setObject(1, mail.getId());
+                mailPs.setObject(2, mail.getSender().getId());
+                mailPs.setString(3, mail.getSubject());
+                mailPs.setString(4, mail.getMessage());
+                mailPs.setObject(5, mail.getDate() != null ? mail.getDate() : LocalDateTime.now());
+                mailPs.setString(6, mail.getCc().stream().map(User::getEmail).collect(Collectors.joining(",")));
+                mailPs.setString(7, mail.getBcc().stream().map(User::getEmail).collect(Collectors.joining(",")));
+                mailPs.executeUpdate();
 
-            String insertMail = "INSERT INTO mails (id, sender_id, date, subject, message) VALUES (?, ?, ?, ?, ?)";
-            try (PreparedStatement ps = connection.prepareStatement(insertMail)) {
-                ps.setObject(1, mail.getId());
-                ps.setObject(2, mail.getSender().getId());
-                ps.setTimestamp(3, Timestamp.valueOf(mail.getDate()));
-                ps.setString(4, mail.getSubject());
-                ps.setString(5, mail.getMessage());
-                ps.executeUpdate();
+                for (User recipient : mail.getRecipients()) {
+                    recipientPs.setObject(1, mail.getId());
+                    recipientPs.setObject(2, recipient.getId());
+                    recipientPs.executeUpdate();
+                }
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
             }
-
-            insertRecipients(mail.getId(), mail.getTo(), "TO");
-            insertRecipients(mail.getId(), mail.getCc(), "CC");
-            insertRecipients(mail.getId(), mail.getBcc(), "BCC");
-
-            connection.commit();
         } catch (SQLException e) {
-            try { connection.rollback(); } catch (SQLException ignored) {}
             throw new RuntimeException("Error saving mail", e);
-        } finally {
-            try { connection.setAutoCommit(true); } catch (SQLException ignored) {}
         }
     }
 
-    private void insertRecipients(UUID mailId, List<User> users, String type) throws SQLException {
-        String sql = "INSERT INTO mail_recipients (mail_id, user_id, type) VALUES (?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            for (User user : users) {
-                ps.setObject(1, mailId);
-                ps.setObject(2, user.getId());
-                ps.setString(3, type);
-                ps.addBatch();
+    @Override
+    public void update(Mail mail) {
+        String mailSql = "UPDATE mails SET sender_id = ?, subject = ?, message = ?, mail_date = ?, cc = ?, bcc = ? WHERE id = ?";
+        String deleteRecipientsSql = "DELETE FROM mail_recipients WHERE mail_id = ?";
+        String recipientSql = "INSERT INTO mail_recipients (mail_id, recipient_id) VALUES (?, ?)";
+
+        try (PreparedStatement mailPs = connection.prepareStatement(mailSql);
+             PreparedStatement deleteRecipientsPs = connection.prepareStatement(deleteRecipientsSql);
+             PreparedStatement recipientPs = connection.prepareStatement(recipientSql)) {
+            
+            connection.setAutoCommit(false);
+            try {
+                mailPs.setObject(1, mail.getSender().getId());
+                mailPs.setString(2, mail.getSubject());
+                mailPs.setString(3, mail.getMessage());
+                mailPs.setObject(4, mail.getDate() != null ? mail.getDate() : LocalDateTime.now());
+                mailPs.setString(5, mail.getCc().stream().map(User::getEmail).collect(Collectors.joining(",")));
+                mailPs.setString(6, mail.getBcc().stream().map(User::getEmail).collect(Collectors.joining(",")));
+                mailPs.setObject(7, mail.getId());
+                mailPs.executeUpdate();
+
+                deleteRecipientsPs.setObject(1, mail.getId());
+                deleteRecipientsPs.executeUpdate();
+
+                for (User recipient : mail.getRecipients()) {
+                    recipientPs.setObject(1, mail.getId());
+                    recipientPs.setObject(2, recipient.getId());
+                    recipientPs.executeUpdate();
+                }
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
             }
-            ps.executeBatch();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating mail", e);
         }
     }
 
     @Override
-    public Optional<Mail> findById(UUID id) {
-        return Optional.empty();
-    }
-
-    @Override
-    public List<Mail> findAll() {
-        return new ArrayList<>();
-    }
-
-    @Override
-    public void deleteById(UUID id) {
-        try (PreparedStatement ps = connection.prepareStatement("DELETE FROM mails WHERE id = ?")) {
+    public void delete(UUID id) {
+        String sql = "DELETE FROM mails WHERE id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setObject(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -104,32 +141,114 @@ public class MailDaoImpl implements MailDao {
     }
 
     @Override
-    public List<Mail> findBySender(User sender) {
-        List<Mail> mails = new ArrayList<>();
-        String sql = "SELECT * FROM mails WHERE sender_id = ?";
+    public Mail findById(UUID id) {
+        String mailSql = "SELECT * FROM mails WHERE id = ?";
+        String recipientsSql = "SELECT recipient_id FROM mail_recipients WHERE mail_id = ?";
 
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setObject(1, sender.getId());
-            ResultSet rs = ps.executeQuery();
+        try (PreparedStatement mailPs = connection.prepareStatement(mailSql);
+             PreparedStatement recipientsPs = connection.prepareStatement(recipientsSql)) {
+            
+            mailPs.setObject(1, id);
+            ResultSet mailRs = mailPs.executeQuery();
+            
+            if (mailRs.next()) {
+                UUID senderId = UUID.fromString(mailRs.getString("sender_id"));
+                User sender = userDao.findById(senderId).orElse(null);
 
-            while (rs.next()) {
-                Mail mail = new Mail(
-                        UUID.fromString(rs.getString("id")),
-                        sender,
-                        List.of(),  // TO: opcional cargar más adelante
-                        List.of(),
-                        List.of(),
-                        rs.getTimestamp("date") != null ? rs.getTimestamp("date").toLocalDateTime() : null,
-                        rs.getString("subject"),
-                        rs.getString("message")
+                List<User> recipients = new ArrayList<>();
+                recipientsPs.setObject(1, id);
+                ResultSet recipientsRs = recipientsPs.executeQuery();
+                while (recipientsRs.next()) {
+                    UUID recipientId = UUID.fromString(recipientsRs.getString("recipient_id"));
+                    userDao.findById(recipientId).ifPresent(recipients::add);
+                }
+
+                List<User> cc = new ArrayList<>();
+                String ccEmails = mailRs.getString("cc");
+                if (ccEmails != null && !ccEmails.isEmpty()) {
+                    for (String email : ccEmails.split(",")) {
+                        userDao.findByEmail(email).ifPresent(cc::add);
+                    }
+                }
+
+                List<User> bcc = new ArrayList<>();
+                String bccEmails = mailRs.getString("bcc");
+                if (bccEmails != null && !bccEmails.isEmpty()) {
+                    for (String email : bccEmails.split(",")) {
+                        userDao.findByEmail(email).ifPresent(bcc::add);
+                    }
+                }
+
+                return new Mail(
+                    id,
+                    sender,
+                    recipients,
+                    cc,
+                    bcc,
+                    mailRs.getTimestamp("mail_date").toLocalDateTime(),
+                    mailRs.getString("subject"),
+                    mailRs.getString("message")
                 );
-                mails.add(mail);
             }
+            return null;
         } catch (SQLException e) {
-            throw new RuntimeException("Error retrieving mails by sender", e);
+            throw new RuntimeException("Error finding mail by id", e);
         }
-
-        return mails;
     }
 
+    @Override
+    public List<Mail> findBySender(User sender) {
+        List<Mail> mails = new ArrayList<>();
+        String mailSql = "SELECT * FROM mails WHERE sender_id = ?";
+        String recipientsSql = "SELECT recipient_id FROM mail_recipients WHERE mail_id = ?";
+
+        try (PreparedStatement mailPs = connection.prepareStatement(mailSql);
+             PreparedStatement recipientsPs = connection.prepareStatement(recipientsSql)) {
+            
+            mailPs.setObject(1, sender.getId());
+            ResultSet mailRs = mailPs.executeQuery();
+            
+            while (mailRs.next()) {
+                UUID mailId = UUID.fromString(mailRs.getString("id"));
+                List<User> recipients = new ArrayList<>();
+                
+                recipientsPs.setObject(1, mailId);
+                ResultSet recipientsRs = recipientsPs.executeQuery();
+                while (recipientsRs.next()) {
+                    UUID recipientId = UUID.fromString(recipientsRs.getString("recipient_id"));
+                    userDao.findById(recipientId).ifPresent(recipients::add);
+                }
+
+                List<User> cc = new ArrayList<>();
+                String ccEmails = mailRs.getString("cc");
+                if (ccEmails != null && !ccEmails.isEmpty()) {
+                    for (String email : ccEmails.split(",")) {
+                        userDao.findByEmail(email).ifPresent(cc::add);
+                    }
+                }
+
+                List<User> bcc = new ArrayList<>();
+                String bccEmails = mailRs.getString("bcc");
+                if (bccEmails != null && !bccEmails.isEmpty()) {
+                    for (String email : bccEmails.split(",")) {
+                        userDao.findByEmail(email).ifPresent(bcc::add);
+                    }
+                }
+
+                mails.add(new Mail(
+                    mailId,
+                    sender,
+                    recipients,
+                    cc,
+                    bcc,
+                    mailRs.getTimestamp("mail_date").toLocalDateTime(),
+                    mailRs.getString("subject"),
+                    mailRs.getString("message")
+                ));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error finding mails by sender", e);
+        }
+        return mails;
+    }
 }

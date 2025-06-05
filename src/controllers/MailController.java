@@ -4,8 +4,11 @@ import models.Mail;
 import models.User;
 import models.UserMail;
 import services.InternalMailService;
+import utils.MailFolder;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MailController {
     private final InternalMailService mailService;
@@ -16,27 +19,78 @@ public class MailController {
         this.currentUser = currentUser;
     }
 
-    public void sendMail(List<User> recipients, String subject, String message) {
-        mailService.sendMail(currentUser, recipients, subject, message);
+    public void sendMail(User from, String to, String cc, String bcc, String subject, String message) {
+        if (from == null) {
+            throw new IllegalArgumentException("Sender cannot be null");
+        }
+
+        List<User> recipients = parseEmails(to);
+        if (recipients.isEmpty()) {
+            throw new IllegalArgumentException("At least one recipient is required");
+        }
+
+        List<User> ccList = parseEmails(cc);
+        List<User> bccList = parseEmails(bcc);
+
+        mailService.sendMail(from, recipients, ccList, bccList, subject, message);
     }
 
     public List<UserMail> getInbox() {
-        return mailService.getInbox(currentUser);
+        return mailService.findByUserAndFolder(currentUser, MailFolder.INBOX);
     }
 
     public List<Mail> getSent() {
-        return mailService.getSent(currentUser);
+        return mailService.findSentByUser(currentUser);
     }
 
     public List<UserMail> getDrafts() {
-        return mailService.getDrafts(currentUser);
+        return mailService.findByUserAndFolder(currentUser, MailFolder.DRAFTS);
     }
 
-    public void markAsRead(Mail mail) {
-        mailService.markAsRead(currentUser, mail);
+    public void markAsRead(User user, Mail mail) {
+        mailService.markAsRead(user, mail);
     }
 
-    public void moveToTrash(Mail mail) {
-        mailService.moveToTrash(currentUser, mail);
+    public void markAsDeleted(Mail mail) {
+        mailService.markAsDeleted(currentUser, mail);
+    }
+
+    public Mail createDraft(User user, String to, String cc, String bcc, String subject, String message) {
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+
+        List<User> recipients = parseEmails(to);
+        List<User> ccList = parseEmails(cc);
+        List<User> bccList = parseEmails(bcc);
+
+        return mailService.createDraft(user, recipients, ccList, bccList, subject, message);
+    }
+
+    public void updateDraft(Mail draft, String to, String cc, String bcc, String subject, String message) {
+        if (draft == null) {
+            throw new IllegalArgumentException("Draft cannot be null");
+        }
+
+        List<User> recipients = parseEmails(to);
+        List<User> ccList = parseEmails(cc);
+        List<User> bccList = parseEmails(bcc);
+
+        mailService.updateDraft(draft, recipients, ccList, bccList, subject, message);
+    }
+
+    public void deleteDraft(Mail draft) {
+        mailService.deleteDraft(currentUser, draft);
+    }
+
+    public List<UserMail> findByUserAndFolder(User user, MailFolder folder) {
+        return mailService.findByUserAndFolder(user, folder);
+    }
+
+    private List<User> parseEmails(String emails) {
+        if (emails == null || emails.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return mailService.findUsersByEmails(emails.split(","));
     }
 } 

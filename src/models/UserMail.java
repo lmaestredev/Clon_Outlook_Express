@@ -22,6 +22,15 @@ public class UserMail {
         this.isDeleted = false;
     }
 
+    public UserMail(User user, Mail mail, boolean isRead) {
+        this.user = user;
+        this.mail = mail;
+        this.contactId = null;
+        this.folder = null;
+        this.isRead = isRead;
+        this.isDeleted = false;
+    }
+
     public UserMail(User user, UUID contactId, MailFolder folder) {
         this.user = user;
         this.mail = null;
@@ -55,8 +64,8 @@ public class UserMail {
         return isDeleted;
     }
 
-    public void markAsRead() {
-        this.isRead = true;
+    public void setRead(boolean read) {
+        isRead = read;
     }
 
     public void markAsDeleted() {

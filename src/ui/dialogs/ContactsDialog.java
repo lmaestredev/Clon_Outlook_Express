@@ -5,18 +5,22 @@ import models.User;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
 
 public class ContactsDialog extends JDialog {
-
-    private final DefaultListModel<User> contactListModel = new DefaultListModel<>();
-    private final JList<User> contactList = new JList<>(contactListModel);
     private final ContactsController contactsController;
+    private final User currentUser;
+    private final JList<User> contactsList;
+    private final DefaultListModel<User> listModel;
 
-    public ContactsDialog(Frame owner, ContactsController contactsController) {
-        super(owner, "Contactos", true);
+    public ContactsDialog(Frame parent, ContactsController contactsController, User currentUser) {
+        super(parent, "Contactos", true);
         this.contactsController = contactsController;
+        this.currentUser = currentUser;
+        this.listModel = new DefaultListModel<>();
+        this.contactsList = new JList<>(listModel);
 
+        setSize(400, 300);
+        setLocationRelativeTo(parent);
         initUI();
         loadContacts();
     }
@@ -24,75 +28,59 @@ public class ContactsDialog extends JDialog {
     private void initUI() {
         setLayout(new BorderLayout());
 
-        // Lista de contactos
-        contactList.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
-            return new JLabel(value.getEmail());
-        });
-
-        JScrollPane scrollPane = new JScrollPane(contactList);
+        // Panel de lista de contactos
+        contactsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane scrollPane = new JScrollPane(contactsList);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Botones
-        JPanel buttonPanel = new JPanel();
+        // Panel de botones
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addButton = new JButton("Agregar");
         JButton removeButton = new JButton("Eliminar");
+        JButton closeButton = new JButton("Cerrar");
 
-        addButton.addActionListener(e -> addNewContact());
+        addButton.addActionListener(e -> showAddContactDialog());
         removeButton.addActionListener(e -> removeSelectedContact());
+        closeButton.addActionListener(e -> dispose());
 
         buttonPanel.add(addButton);
         buttonPanel.add(removeButton);
+        buttonPanel.add(closeButton);
         add(buttonPanel, BorderLayout.SOUTH);
-
-        pack();
-        setLocationRelativeTo(getOwner());
     }
 
     private void loadContacts() {
-        contactListModel.clear();
-        List<User> contacts = contactsController.getAllContacts();
-        for (User contact : contacts) {
-            contactListModel.addElement(contact);
-        }
+        listModel.clear();
+        contactsController.getAllContacts().forEach(listModel::addElement);
     }
 
-    private void addNewContact() {
+    private void showAddContactDialog() {
         String email = JOptionPane.showInputDialog(this, "Ingrese el email del contacto:");
         if (email != null && !email.trim().isEmpty()) {
             try {
-                contactsController.addContact(email);
+                contactsController.addContact(email.trim());
                 loadContacts();
-                JOptionPane.showMessageDialog(this, "Contacto agregado exitosamente");
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, 
-                    "Error al agregar contacto: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                    "Error al agregar contacto: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
     private void removeSelectedContact() {
-        User selectedContact = contactList.getSelectedValue();
+        User selectedContact = contactsList.getSelectedValue();
         if (selectedContact != null) {
-            int confirm = JOptionPane.showConfirmDialog(this,
-                "¿Está seguro que desea eliminar este contacto de su agenda?",
-                "Confirmar eliminación",
-                JOptionPane.YES_NO_OPTION);
-            
-            if (confirm == JOptionPane.YES_OPTION) {
-                try {
-                    contactsController.removeContact(selectedContact);
-                    loadContacts();
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this,
-                        "Error al eliminar contacto: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                }
+            try {
+                contactsController.removeContact(selectedContact);
+                loadContacts();
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                    "Error al eliminar contacto: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
             }
-        } else {
-            JOptionPane.showMessageDialog(this,
-                "Por favor seleccione un contacto para eliminar",
-                "Error", JOptionPane.WARNING_MESSAGE);
         }
     }
 } 

@@ -97,7 +97,7 @@ public class UserMailDaoImpl implements UserMailDao {
                 );
 
                 UserMail userMail = new UserMail(user, mail, MailFolder.valueOf(rs.getString("folder")));
-                if (rs.getBoolean("is_read")) userMail.markAsRead();
+                if (rs.getBoolean("is_read")) userMail.setRead(true);
                 if (rs.getBoolean("is_deleted")) userMail.markAsDeleted();
 
                 result.add(userMail);
@@ -117,6 +117,18 @@ public class UserMailDaoImpl implements UserMailDao {
     @Override
     public void markAsDeleted(User user, Mail mail) {
         updateFlag(user, mail, "is_deleted", true);
+    }
+
+    @Override
+    public void delete(User user, Mail mail) {
+        String sql = "DELETE FROM user_mails WHERE user_id = ? AND mail_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setObject(1, user.getId());
+            ps.setObject(2, mail.getId());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error deleting userMail", e);
+        }
     }
 
     private void updateFlag(User user, Mail mail, String column, boolean value) {
