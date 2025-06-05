@@ -26,4 +26,8 @@ public class UserController {
                 .filter(u -> !u.getEmail().equals(user.getEmail()))
                 .toList();
     }
+
+    public void save(User user) {
+        userDao.save(user);
+    }
 } 
