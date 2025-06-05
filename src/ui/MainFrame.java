@@ -3,13 +3,9 @@ package ui;
 import controllers.ContactsController;
 import controllers.MailController;
 import controllers.UserController;
-import models.Mail;
 import models.User;
 import models.UserMail;
-import persistence.dao.ContactBookDao;
 import persistence.dao.UserDao;
-import persistence.dao.UserMailDao;
-import services.InternalMailService;
 import ui.dialogs.ComposeMailDialog;
 import ui.dialogs.ContactsDialog;
 import utils.MailFolder;
@@ -151,11 +147,17 @@ public class MainFrame extends JFrame {
                 var userMailDao = new persistence.impl.UserMailDaoImpl(connection, userDao);
                 var contactBookDao = new persistence.impl.ContactBookDaoImpl(connection, userDao);
                 
-                var internalMailService = new InternalMailService(mailDao, userMailDao, userDao);
+                var internalMailService = new services.InternalMailService(mailDao, userMailDao, userDao);
                 
                 var userController = new controllers.UserController(userDao);
-                var currentUser = userController.findByEmail("lmaestre@palermo.edu")
-                        .orElseThrow(() -> new RuntimeException("Usuario lmaestre@palermo.edu no encontrado"));
+                
+                // Mostrar login
+                ui.dialogs.LoginDialog loginDialog = new ui.dialogs.LoginDialog(null, userController);
+                loginDialog.setVisible(true);
+                models.User currentUser = loginDialog.getLoggedUser();
+                if (currentUser == null) {
+                    System.exit(0);
+                }
                 
                 var mailController = new controllers.MailController(internalMailService, currentUser);
                 var contactsController = new controllers.ContactsController(userDao, contactBookDao, currentUser);
