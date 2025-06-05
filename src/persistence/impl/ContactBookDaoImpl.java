@@ -21,16 +21,8 @@ public class ContactBookDaoImpl implements ContactBookDao {
     }
 
     private void createTableIfNotExists() {
-        // Primero eliminamos la tabla si existe para recrearla con la estructura correcta
-        String dropSql = "DROP TABLE IF EXISTS contact_book;";
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute(dropSql);
-        } catch (SQLException e) {
-            throw new RuntimeException("Error dropping contact_book table: " + e.getMessage(), e);
-        }
-
         String sql = """
-            CREATE TABLE contact_book (
+            CREATE TABLE IF NOT EXISTS contact_book (
                 user_id UUID NOT NULL,
                 contact_id UUID NOT NULL,
                 PRIMARY KEY (user_id, contact_id),
