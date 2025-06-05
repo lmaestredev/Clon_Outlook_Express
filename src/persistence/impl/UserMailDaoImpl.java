@@ -69,11 +69,10 @@ public class UserMailDaoImpl implements UserMailDao {
     public List<UserMail> findByUserAndFolder(User user, MailFolder folder) {
         List<UserMail> result = new ArrayList<>();
         String sql = """
-        SELECT um.*, m.subject, m.message, m.sender_id
+        SELECT um.*, m.subject, m.message, m.sender_id, m.id as mail_id
         FROM user_mails um
         JOIN mails m ON um.mail_id = m.id
-        WHERE um.user_id = ?
-        """ + (folder != null ? " AND um.folder = ?" : "");
+        WHERE um.user_id = ?""" + (folder != null ? " AND um.folder = ?" : "");
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setObject(1, user.getId());
@@ -85,10 +84,22 @@ public class UserMailDaoImpl implements UserMailDao {
                 UUID senderId = UUID.fromString(rs.getString("sender_id"));
                 Optional<User> sender = userDao.findById(senderId);
 
+                // Cargar destinatarios reales
+                List<User> recipients = new ArrayList<>();
+                String recipientsSql = "SELECT recipient_id FROM mail_recipients WHERE mail_id = ?";
+                try (PreparedStatement recipientsPs = connection.prepareStatement(recipientsSql)) {
+                    recipientsPs.setObject(1, mailId);
+                    ResultSet recipientsRs = recipientsPs.executeQuery();
+                    while (recipientsRs.next()) {
+                        UUID recipientId = UUID.fromString(recipientsRs.getString("recipient_id"));
+                        userDao.findById(recipientId).ifPresent(recipients::add);
+                    }
+                }
+
                 Mail mail = new Mail(
                         mailId,
                         sender.orElse(null),
-                        List.of(),
+                        recipients,
                         List.of(),
                         List.of(),
                         null,

@@ -91,8 +91,19 @@ public class MainFrame extends JFrame {
         mailList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         mailList.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
             String subject = value.getMail().getSubject();
-            String senderEmail = value.getMail().getSender() != null ? value.getMail().getSender().getEmail() : "Unknown Sender";
-            return new JLabel("Asunto: " + subject + "  |  De: " + senderEmail);
+            String info;
+            if (currentFolder == MailFolder.SENT) {
+                // Mostrar destinatarios principales
+                List<User> recipients = value.getMail().getRecipients();
+                String to = recipients.isEmpty() ? "Sin destinatario" :
+                    recipients.stream().map(User::getEmail).reduce((a, b) -> a + ", " + b).orElse("");
+                info = "Para: " + to;
+            } else {
+                // Mostrar remitente
+                String senderEmail = value.getMail().getSender() != null ? value.getMail().getSender().getEmail() : "Desconocido";
+                info = "De: " + senderEmail;
+            }
+            return new JLabel("Asunto: " + subject + "  |  " + info);
         });
 
         mailList.addListSelectionListener(e -> {
