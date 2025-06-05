@@ -6,8 +6,10 @@ import controllers.UserController;
 import models.Mail;
 import models.User;
 import models.UserMail;
-import persistence.dao.ContactDao;
-import persistence.impl.ContactDaoImpl;
+import persistence.dao.ContactBookDao;
+import persistence.dao.UserDao;
+import persistence.dao.UserMailDao;
+import services.InternalMailService;
 import ui.dialogs.ComposeMailDialog;
 import ui.dialogs.ContactsDialog;
 
@@ -88,6 +90,7 @@ public class MainFrame extends JFrame {
                 Mail selectedMail = mailList.getSelectedValue();
                 if (selectedMail != null) {
                     messageView.setText(selectedMail.getMessage());
+                    mailController.markAsRead(selectedMail);
                 }
             }
         });
@@ -106,7 +109,7 @@ public class MainFrame extends JFrame {
 
     private void loadInbox() {
         mailListModel.clear();
-        var userMails = mailController.getInbox(currentUser);
+        var userMails = mailController.getInbox();
         for (UserMail userMail : userMails) {
             mailListModel.addElement(userMail.getMail());
         }
@@ -114,7 +117,7 @@ public class MainFrame extends JFrame {
 
     private void loadSent() {
         mailListModel.clear();
-        var sentMails = mailController.getSent(currentUser);
+        var sentMails = mailController.getSent();
         for (Mail mail : sentMails) {
             mailListModel.addElement(mail);
         }
@@ -122,7 +125,7 @@ public class MainFrame extends JFrame {
 
     private void loadDrafts() {
         mailListModel.clear();
-        var userMails = mailController.getDrafts(currentUser);
+        var userMails = mailController.getDrafts();
         for (UserMail userMail : userMails) {
             mailListModel.addElement(userMail.getMail());
         }
@@ -136,17 +139,16 @@ public class MainFrame extends JFrame {
                 var userDao = new persistence.impl.UserDaoImpl(connection);
                 var mailDao = new persistence.impl.MailDaoImpl(connection);
                 var userMailDao = new persistence.impl.UserMailDaoImpl(connection, userDao);
-                var contactDao = new ContactDaoImpl(connection);
+                var contactBookDao = new persistence.impl.ContactBookDaoImpl(connection, userDao);
                 
-                var mailSenderService = new services.InternalMailSenderService(mailDao, userMailDao, new config.MailServerConfig("localhost", 25, "", "", false, false));
+                var internalMailService = new InternalMailService(mailDao, userMailDao);
                 
                 var userController = new controllers.UserController(userDao);
-                var mailController = new controllers.MailController(mailDao, userMailDao, mailSenderService);
-                
                 var currentUser = userController.findByEmail("lmaestre@palermo.edu")
                         .orElseThrow(() -> new RuntimeException("Usuario lmaestre@palermo.edu no encontrado"));
                 
-                var contactsController = new controllers.ContactsController(contactDao, currentUser);
+                var mailController = new controllers.MailController(internalMailService, currentUser);
+                var contactsController = new controllers.ContactsController(userDao, contactBookDao, currentUser);
                 
                 new MainFrame(currentUser, mailController, userController, contactsController).setVisible(true);
             } catch (Exception e) {

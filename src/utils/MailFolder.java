@@ -4,5 +4,6 @@ public enum MailFolder {
     INBOX,
     SENT,
     DRAFTS,
-    TRASH
+    TRASH,
+    CONTACTS
 }

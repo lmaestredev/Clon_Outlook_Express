@@ -83,14 +83,14 @@ public class UserMailDaoImpl implements UserMailDao {
             while (rs.next()) {
                 UUID mailId = UUID.fromString(rs.getString("mail_id"));
                 UUID senderId = UUID.fromString(rs.getString("sender_id"));
-                Optional<User> sender = userDao.findById(senderId); // ✅ importante
+                Optional<User> sender = userDao.findById(senderId);
 
                 Mail mail = new Mail(
                         mailId,
-                        sender.orElse(null), // puede que no lo encuentre
-                        List.of(),  // TO
-                        List.of(),  // CC
-                        List.of(),  // BCC
+                        sender.orElse(null),
+                        List.of(),
+                        List.of(),
+                        List.of(),
                         null,
                         rs.getString("subject"),
                         rs.getString("message")

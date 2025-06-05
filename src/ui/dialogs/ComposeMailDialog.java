@@ -47,11 +47,20 @@ public class ComposeMailDialog extends JDialog {
                         .filter(u -> Arrays.asList(recipients).contains(u.getEmail()))
                         .toList();
 
-                mailController.sendMail(currentUser, toUsers, subjectField.getText(), messageArea.getText());
+                if (toUsers.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, 
+                        "Por favor ingrese al menos un destinatario válido",
+                        "Error", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                mailController.sendMail(toUsers, subjectField.getText(), messageArea.getText());
                 JOptionPane.showMessageDialog(this, "Correo enviado correctamente");
                 dispose();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error al enviar el correo: " + ex.getMessage());
+                JOptionPane.showMessageDialog(this, 
+                    "Error al enviar el correo: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
