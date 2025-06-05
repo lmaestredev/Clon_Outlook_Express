@@ -34,7 +34,7 @@ El código fuente se encuentra en:
 
 [https://github.com/lmaestredev/Clon_Outlook_Express](https://github.com/lmaestre/Clon_Outlook_Express)
 
-## ¿Por qué es atractivo?
+## Ventajas del proyecto
 
 - **Fácil de usar**: Interfaz intuitiva y moderna.
 - **Multiusuario**: Cada usuario tiene su propia bandeja y contactos.
