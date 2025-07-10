@@ -114,7 +114,6 @@ public class UserManagementDialog extends JDialog {
                 UserRole newRole = UserRole.valueOf(selectedRole);
                 userDao.updateRole(selectedUser.getId(), newRole);
                 
-                // Actualizar el usuario en la lista
                 selectedUser.setRole(newRole);
                 userList.repaint();
                 

@@ -32,7 +32,6 @@ public class SimpleAutoCompleteTextField extends JTextField {
         comboBox.setEditable(false);
         comboBox.setVisible(false);
         
-        // Agregar el comboBox al contenedor padre cuando se agregue al contenedor
         addHierarchyListener(new HierarchyListener() {
             @Override
             public void hierarchyChanged(HierarchyEvent e) {
@@ -47,7 +46,6 @@ public class SimpleAutoCompleteTextField extends JTextField {
     }
 
     private void setupListeners() {
-        // Listener para cambios en el texto
         getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -71,7 +69,6 @@ public class SimpleAutoCompleteTextField extends JTextField {
             }
         });
 
-        // Listener para el comboBox
         comboBox.addActionListener(e -> {
             if (!isAdjusting && comboBox.getSelectedItem() != null) {
                 String selected = comboBox.getSelectedItem().toString();
@@ -82,7 +79,6 @@ public class SimpleAutoCompleteTextField extends JTextField {
             }
         });
 
-        // Listener para teclas
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -108,7 +104,6 @@ public class SimpleAutoCompleteTextField extends JTextField {
             }
         });
 
-        // Listener para perder el foco
         addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
@@ -126,7 +121,6 @@ public class SimpleAutoCompleteTextField extends JTextField {
             return;
         }
 
-        // Extraer la última dirección de correo del texto
         String[] parts = text.split(",");
         String lastPart = parts[parts.length - 1].trim();
         
@@ -137,7 +131,6 @@ public class SimpleAutoCompleteTextField extends JTextField {
 
         System.out.println("SimpleAutoCompleteTextField: Buscando sugerencias para '" + lastPart + "'");
 
-        // Buscar sugerencias
         List<String> suggestions = emailHistoryService.searchEmails(currentUser, lastPart, 10);
         
         System.out.println("SimpleAutoCompleteTextField: Sugerencias encontradas: " + suggestions);
@@ -147,13 +140,11 @@ public class SimpleAutoCompleteTextField extends JTextField {
             return;
         }
 
-        // Actualizar el comboBox
         comboBox.removeAllItems();
         for (String suggestion : suggestions) {
             comboBox.addItem(suggestion);
         }
 
-        // Mostrar el comboBox
         showComboBox();
         
         System.out.println("SimpleAutoCompleteTextField: ComboBox mostrado con " + suggestions.size() + " sugerencias");
@@ -164,13 +155,11 @@ public class SimpleAutoCompleteTextField extends JTextField {
             return;
         }
 
-        // Asegurar que el comboBox esté en el contenedor padre
         Container parent = getParent();
         if (parent != null && comboBox.getParent() == null) {
             parent.add(comboBox);
         }
 
-        // Posicionar el comboBox debajo del campo de texto
         Point location = getLocation();
         Dimension size = getSize();
         
@@ -178,7 +167,6 @@ public class SimpleAutoCompleteTextField extends JTextField {
         comboBox.setSize(getWidth(), 150);
         comboBox.setVisible(true);
         
-        // Usar SwingUtilities.invokeLater para asegurar que el comboBox esté visible antes de mostrar el popup
         SwingUtilities.invokeLater(() -> {
             if (comboBox.isVisible()) {
                 comboBox.showPopup();

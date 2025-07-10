@@ -32,22 +32,19 @@ public class WorkingAutoCompleteTextField extends JTextField {
     }
 
     private void setupPopup() {
-        // Crear el popup con owner específico
+
         popup = new JWindow();
         popup.setLayout(new BorderLayout());
         
-        // Configurar la lista de sugerencias
         suggestionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         suggestionList.setFont(getFont());
         suggestionList.setBackground(Color.WHITE);
         suggestionList.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         
-        // Crear el scroll pane
         JScrollPane scrollPane = new JScrollPane(suggestionList);
         scrollPane.setPreferredSize(new Dimension(300, 120));
         popup.add(scrollPane, BorderLayout.CENTER);
         
-        // Eventos de la lista
         suggestionList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -70,7 +67,6 @@ public class WorkingAutoCompleteTextField extends JTextField {
     }
 
     private void setupListeners() {
-        // Listener para cambios en el texto
         getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -94,7 +90,6 @@ public class WorkingAutoCompleteTextField extends JTextField {
             }
         });
 
-        // Listener para teclas
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -126,7 +121,6 @@ public class WorkingAutoCompleteTextField extends JTextField {
             }
         });
 
-        // Listener para perder el foco
         addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
@@ -144,7 +138,6 @@ public class WorkingAutoCompleteTextField extends JTextField {
             return;
         }
 
-        // Extraer la última dirección de correo del texto
         String[] parts = text.split(",");
         String lastPart = parts[parts.length - 1].trim();
         
@@ -155,7 +148,6 @@ public class WorkingAutoCompleteTextField extends JTextField {
 
         System.out.println("WorkingAutoCompleteTextField: Buscando sugerencias para '" + lastPart + "'");
 
-        // Buscar sugerencias
         List<String> suggestions = emailHistoryService.searchEmails(currentUser, lastPart, 8);
         
         System.out.println("WorkingAutoCompleteTextField: Sugerencias encontradas: " + suggestions);
@@ -165,16 +157,13 @@ public class WorkingAutoCompleteTextField extends JTextField {
             return;
         }
 
-        // Actualizar la lista de sugerencias
         listModel.clear();
         for (String suggestion : suggestions) {
             listModel.addElement(suggestion);
         }
 
-        // Mostrar el popup
         showPopup();
         
-        // Seleccionar la primera sugerencia
         if (suggestionList.getModel().getSize() > 0) {
             suggestionList.setSelectedIndex(0);
         }
@@ -185,21 +174,17 @@ public class WorkingAutoCompleteTextField extends JTextField {
             return;
         }
 
-        // Obtener la posición del campo de texto
         Point location = getLocationOnScreen();
         Dimension size = getSize();
         
-        // Posicionar el popup debajo del campo
         int x = location.x;
         int y = location.y + size.height;
         
-        // Verificar que no se salga de la pantalla
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         if (y + 120 > screenSize.height) {
             y = location.y - 120;
         }
         
-        // Asegurar que el popup tenga un owner válido
         if (popup.getOwner() == null) {
             Window owner = SwingUtilities.getWindowAncestor(this);
             if (owner != null) {
@@ -236,15 +221,12 @@ public class WorkingAutoCompleteTextField extends JTextField {
             String[] parts = text.split(",");
             
             if (parts.length > 1) {
-                // Reemplazar la última parte
                 parts[parts.length - 1] = selected;
                 setText(String.join(",", parts));
             } else {
-                // Reemplazar todo el texto
                 setText(selected);
             }
             
-            // Mover el cursor al final
             setCaretPosition(getText().length());
             
             isAdjusting = false;

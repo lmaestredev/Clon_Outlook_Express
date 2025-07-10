@@ -29,8 +29,7 @@ public class UserDaoImpl implements UserDao {
         """;
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(sql);
-            
-            // Agregar columna role si no existe (para tablas existentes)
+
             try {
                 stmt.execute("ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'USER'");
             } catch (SQLException e) {

@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
  */
 public class EmailHistoryService {
     private final UserDao userDao;
-    private final Map<String, Set<String>> userEmailHistory; // userId -> Set<email>
-    private final Map<String, Integer> emailFrequency; // email -> frequency
+    private final Map<String, Set<String>> userEmailHistory;
+    private final Map<String, Integer> emailFrequency;
 
     public EmailHistoryService(UserDao userDao) {
         this.userDao = userDao;
@@ -36,8 +36,7 @@ public class EmailHistoryService {
             if (email != null && !email.trim().isEmpty()) {
                 String cleanEmail = email.trim().toLowerCase();
                 userEmailHistory.get(userId).add(cleanEmail);
-                
-                // Incrementar frecuencia global
+
                 emailFrequency.merge(cleanEmail, 1, Integer::sum);
             }
         }
@@ -78,7 +77,6 @@ public class EmailHistoryService {
             return new ArrayList<>();
         }
 
-        // Obtener todos los usuarios registrados
         List<User> allUsers = userDao.findAll();
         
         // Buscar usuarios que coincidan con el patrón (que comiencen con el string)
@@ -105,24 +103,6 @@ public class EmailHistoryService {
         return matches;
     }
 
-    /**
-     * Método de prueba para verificar que el autocompletado funcione
-     */
-    public void testAutocomplete() {
-        System.out.println("=== PRUEBA DE AUTOCOMPLETADO ===");
-        List<User> allUsers = userDao.findAll();
-        System.out.println("Total de usuarios: " + allUsers.size());
-        
-        for (User user : allUsers) {
-            System.out.println("Usuario: " + user.getEmail());
-        }
-        
-        // Probar búsqueda con "val"
-        List<String> results = searchEmails(null, "val", 10);
-        System.out.println("Resultados para 'val': " + results);
-        
-        System.out.println("=== FIN PRUEBA ===");
-    }
 
     /**
      * Obtiene todas las direcciones de correo del historial del usuario

@@ -33,7 +33,6 @@ public class ComboBoxAutoCompleteTextField extends JComboBox<String> {
     }
 
     private void setupListeners() {
-        // Listener para cambios en el texto del editor
         editor.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -57,7 +56,6 @@ public class ComboBoxAutoCompleteTextField extends JComboBox<String> {
             }
         });
 
-        // Listener para teclas
         editor.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -75,11 +73,9 @@ public class ComboBoxAutoCompleteTextField extends JComboBox<String> {
                     hidePopup();
                     e.consume();
                 }
-                // Permitir todas las demás teclas normalmente (incluyendo Backspace y Delete)
             }
         });
 
-        // Listener para selección de item
         addActionListener(e -> {
             if (getSelectedItem() != null && !isAdjusting) {
                 String selected = getSelectedItem().toString();
@@ -98,7 +94,6 @@ public class ComboBoxAutoCompleteTextField extends JComboBox<String> {
             return;
         }
 
-        // Extraer la última dirección de correo del texto
         String[] parts = text.split(",");
         String lastPart = parts[parts.length - 1].trim();
         
@@ -109,7 +104,6 @@ public class ComboBoxAutoCompleteTextField extends JComboBox<String> {
 
         System.out.println("ComboBoxAutoCompleteTextField: Buscando sugerencias para '" + lastPart + "'");
 
-        // Buscar sugerencias
         List<String> suggestions = emailHistoryService.searchEmails(currentUser, lastPart, 8);
         
         System.out.println("ComboBoxAutoCompleteTextField: Sugerencias encontradas: " + suggestions);
@@ -119,7 +113,6 @@ public class ComboBoxAutoCompleteTextField extends JComboBox<String> {
             return;
         }
 
-        // Actualizar la lista de sugerencias
         isAdjusting = true;
         removeAllItems();
         for (String suggestion : suggestions) {
@@ -127,10 +120,8 @@ public class ComboBoxAutoCompleteTextField extends JComboBox<String> {
         }
         isAdjusting = false;
 
-        // Mostrar el popup
         showPopup();
         
-        // Seleccionar la primera sugerencia para navegación con teclado
         if (getItemCount() > 0) {
             setSelectedIndex(0);
         }

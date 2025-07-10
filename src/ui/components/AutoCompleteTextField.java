@@ -52,10 +52,8 @@ public class AutoCompleteTextField extends JTextField {
         ));
         popup.add(scrollPane, BorderLayout.CENTER);
         
-        // Hacer el popup siempre visible por encima
         popup.setAlwaysOnTop(true);
         
-        // Evento para seleccionar con Enter
         suggestionList.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -67,7 +65,6 @@ public class AutoCompleteTextField extends JTextField {
             }
         });
         
-        // Evento para seleccionar con clic
         suggestionList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -103,7 +100,6 @@ public class AutoCompleteTextField extends JTextField {
             }
         });
 
-        // Listener para teclas
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -135,7 +131,6 @@ public class AutoCompleteTextField extends JTextField {
             }
         });
 
-        // Listener para perder el foco
         addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
@@ -154,7 +149,6 @@ public class AutoCompleteTextField extends JTextField {
             return;
         }
 
-        // Extraer la última dirección de correo del texto
         String[] parts = text.split(",");
         String lastPart = parts[parts.length - 1].trim();
         
@@ -176,7 +170,6 @@ public class AutoCompleteTextField extends JTextField {
             return;
         }
 
-        // Actualizar la lista de sugerencias
         listModel.clear();
         for (String suggestion : suggestions) {
             listModel.addElement(suggestion);
@@ -184,10 +177,8 @@ public class AutoCompleteTextField extends JTextField {
 
         System.out.println("AutoCompleteTextField: Mostrando popup con " + suggestions.size() + " sugerencias");
         
-        // Mostrar el popup
         showPopup();
         
-        // Seleccionar la primera sugerencia
         if (suggestionList.getModel().getSize() > 0) {
             suggestionList.setSelectedIndex(0);
         }
@@ -203,21 +194,19 @@ public class AutoCompleteTextField extends JTextField {
         Point location = getLocationOnScreen();
         Dimension size = getSize();
         
-        // Asegurar que el popup esté en la pantalla
         int x = location.x;
         int y = location.y + size.height;
         
-        // Verificar que no se salga de la pantalla
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         if (y + popup.getPreferredSize().height > screenSize.height) {
             y = location.y - popup.getPreferredSize().height;
         }
         
         popup.setLocation(x, y);
-        popup.pack(); // Asegurar que el popup tenga el tamaño correcto
+        popup.pack();
         popup.setVisible(true);
         popup.toFront();
-        popup.requestFocus(); // Asegurar que el popup tenga el foco
+        popup.requestFocus();
         
         System.out.println("AutoCompleteTextField: Popup mostrado en posición: " + x + ", " + y);
         System.out.println("AutoCompleteTextField: Tamaño del popup: " + popup.getSize());
@@ -236,11 +225,9 @@ public class AutoCompleteTextField extends JTextField {
             String[] parts = text.split(",");
             
             if (parts.length > 1) {
-                // Reemplazar la última parte
                 parts[parts.length - 1] = selected;
                 setText(String.join(",", parts));
             } else {
-                // Reemplazar todo el texto
                 setText(selected);
             }
             
