@@ -3,29 +3,35 @@ package ui.dialogs;
 import controllers.MailController;
 import models.Mail;
 import models.User;
+import services.EmailHistoryService;
+import ui.components.AutoCompleteTextField;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class ComposeMailDialog extends JDialog {
-    private final JTextField toField;
-    private final JTextField ccField;
-    private final JTextField bccField;
+    private final AutoCompleteTextField toField;
+    private final AutoCompleteTextField ccField;
+    private final AutoCompleteTextField bccField;
     private final JTextField subjectField;
     private final JTextArea messageArea;
     private final MailController mailController;
     private final User currentUser;
     private final List<User> allUsers;
+    private final EmailHistoryService emailHistoryService;
     private Mail draftMail;
     private Timer autoSaveTimer;
 
-    public ComposeMailDialog(Frame parent, MailController mailController, User currentUser, List<User> allUsers) {
+    public ComposeMailDialog(Frame parent, MailController mailController, User currentUser, List<User> allUsers, EmailHistoryService emailHistoryService) {
         super(parent, "Redactar Correo", true);
         this.mailController = mailController;
         this.currentUser = currentUser;
         this.allUsers = allUsers;
+        this.emailHistoryService = emailHistoryService;
 
         setSize(600, 400);
         setLocationRelativeTo(parent);
@@ -38,15 +44,15 @@ public class ComposeMailDialog extends JDialog {
         fieldsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         fieldsPanel.add(new JLabel("Para:"));
-        toField = new JTextField();
+        toField = new AutoCompleteTextField(emailHistoryService, currentUser);
         fieldsPanel.add(toField);
 
         fieldsPanel.add(new JLabel("CC:"));
-        ccField = new JTextField();
+        ccField = new AutoCompleteTextField(emailHistoryService, currentUser);
         fieldsPanel.add(ccField);
 
         fieldsPanel.add(new JLabel("BCC:"));
-        bccField = new JTextField();
+        bccField = new AutoCompleteTextField(emailHistoryService, currentUser);
         fieldsPanel.add(bccField);
 
         fieldsPanel.add(new JLabel("Asunto:"));
@@ -158,6 +164,10 @@ public class ComposeMailDialog extends JDialog {
 
         try {
             mailController.sendMail(currentUser, to, cc, bcc, subject, message);
+            
+            // Agregar direcciones al historial de autocompletado
+            addEmailsToHistory(to, cc, bcc);
+            
             if (draftMail != null) {
                 mailController.deleteDraft(draftMail);
             }
@@ -184,6 +194,31 @@ public class ComposeMailDialog extends JDialog {
                 .collect(Collectors.joining(", ")));
         subjectField.setText(draft.getSubject());
         messageArea.setText(draft.getMessage());
+    }
+
+    /**
+     * Agrega las direcciones de correo utilizadas al historial
+     */
+    private void addEmailsToHistory(String to, String cc, String bcc) {
+        List<String> allEmails = new ArrayList<>();
+        
+        if (to != null && !to.trim().isEmpty()) {
+            allEmails.addAll(Arrays.asList(to.split(",")));
+        }
+        if (cc != null && !cc.trim().isEmpty()) {
+            allEmails.addAll(Arrays.asList(cc.split(",")));
+        }
+        if (bcc != null && !bcc.trim().isEmpty()) {
+            allEmails.addAll(Arrays.asList(bcc.split(",")));
+        }
+        
+        // Limpiar y agregar al historial
+        List<String> cleanEmails = allEmails.stream()
+                .map(String::trim)
+                .filter(email -> !email.isEmpty())
+                .collect(Collectors.toList());
+        
+        emailHistoryService.addToHistory(currentUser, cleanEmails);
     }
 }
 

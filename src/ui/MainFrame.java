@@ -8,6 +8,10 @@ import models.UserMail;
 import persistence.dao.UserDao;
 import ui.dialogs.ComposeMailDialog;
 import ui.dialogs.ContactsDialog;
+import ui.dialogs.EmailHistoryDialog;
+import ui.dialogs.ServerConfigDialog;
+import ui.dialogs.UserManagementDialog;
+import services.EmailHistoryService;
 import utils.MailFolder;
 
 import javax.swing.*;
@@ -26,15 +30,19 @@ public class MainFrame extends JFrame {
     private final UserController userController;
     private final ContactsController contactsController;
     private final UserDao userDao;
+    private final services.InternalMailService mailService;
+    private final EmailHistoryService emailHistoryService;
     private MailFolder currentFolder;
 
-    public MainFrame(User currentUser, MailController mailController, UserController userController, ContactsController contactsController, UserDao userDao) {
-        super("Cliente de Correo");
+    public MainFrame(User currentUser, MailController mailController, UserController userController, ContactsController contactsController, UserDao userDao, services.InternalMailService mailService, EmailHistoryService emailHistoryService) {
+        super("Cliente de Correo - " + currentUser.getEmail() + " (" + currentUser.getRole() + ")");
         this.currentUser = currentUser;
         this.mailController = mailController;
         this.userController = userController;
         this.contactsController = contactsController;
         this.userDao = userDao;
+        this.mailService = mailService;
+        this.emailHistoryService = emailHistoryService;
 
         setSize(1000, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -74,16 +82,47 @@ public class MainFrame extends JFrame {
 
         JButton contactsButton = new JButton("👥 Contactos");
         contactsButton.addActionListener(e -> {
-            new ContactsDialog(this, contactsController, currentUser).setVisible(true);
+            new ContactsDialog(this, contactsController, currentUser, emailHistoryService).setVisible(true);
         });
         foldersPanel.add(contactsButton);
 
         JButton composeButton = new JButton("✉️ Redactar");
         composeButton.addActionListener(e -> {
-            ComposeMailDialog composeDialog = new ComposeMailDialog(this, mailController, currentUser, userDao.findAll());
+            ComposeMailDialog composeDialog = new ComposeMailDialog(this, mailController, currentUser, userDao.findAll(), emailHistoryService);
             composeDialog.setVisible(true);
         });
         foldersPanel.add(composeButton);
+
+        // Botones solo para administradores
+        if (currentUser.getRole() == models.UserRole.ADMIN) {
+            JButton configButton = new JButton("⚙️ Configuración");
+            configButton.addActionListener(e -> {
+                ServerConfigDialog configDialog = new ServerConfigDialog(this);
+                // Cargar configuración actual
+                configDialog.setServerConfig(mailService.getServerConfig());
+                configDialog.setVisible(true);
+                // Guardar nueva configuración si se modificó
+                if (configDialog.getServerConfig() != null) {
+                    mailService.setServerConfig(configDialog.getServerConfig());
+                    JOptionPane.showMessageDialog(this, "Configuración del servidor actualizada", "Configuración", JOptionPane.INFORMATION_MESSAGE);
+                }
+            });
+            foldersPanel.add(configButton);
+
+            JButton historyButton = new JButton("📧 Historial Emails");
+            historyButton.addActionListener(e -> {
+                EmailHistoryDialog historyDialog = new EmailHistoryDialog(this, emailHistoryService, currentUser);
+                historyDialog.setVisible(true);
+            });
+            foldersPanel.add(historyButton);
+
+            JButton userManagementButton = new JButton("👥 Gestión Usuarios");
+            userManagementButton.addActionListener(e -> {
+                UserManagementDialog userManagementDialog = new UserManagementDialog(this, userDao);
+                userManagementDialog.setVisible(true);
+            });
+            foldersPanel.add(userManagementButton);
+        }
 
         add(foldersPanel, BorderLayout.WEST);
 
@@ -111,7 +150,7 @@ public class MainFrame extends JFrame {
                 UserMail selectedMail = mailList.getSelectedValue();
                 if (selectedMail != null) {
                     if (currentFolder == MailFolder.DRAFTS) {
-                        ComposeMailDialog composeDialog = new ComposeMailDialog(this, mailController, currentUser, userDao.findAll());
+                        ComposeMailDialog composeDialog = new ComposeMailDialog(this, mailController, currentUser, userDao.findAll(), emailHistoryService);
                         composeDialog.loadDraft(selectedMail.getMail());
                         composeDialog.setVisible(true);
                     } else {
@@ -172,8 +211,12 @@ public class MainFrame extends JFrame {
                 
                 var mailController = new controllers.MailController(internalMailService, currentUser);
                 var contactsController = new controllers.ContactsController(userDao, contactBookDao, currentUser);
+                var emailHistoryService = new services.EmailHistoryService(userDao);
                 
-                new MainFrame(currentUser, mailController, userController, contactsController, userDao).setVisible(true);
+                // Probar el autocompletado
+                emailHistoryService.testAutocomplete();
+                
+                new MainFrame(currentUser, mailController, userController, contactsController, userDao, internalMailService, emailHistoryService).setVisible(true);
             } catch (Exception e) {
                 throw new RuntimeException("Error inicializando la aplicación", e);
             }

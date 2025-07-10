@@ -2,6 +2,8 @@ package ui.dialogs;
 
 import controllers.ContactsController;
 import models.User;
+import services.EmailHistoryService;
+import ui.components.AutoCompleteTextField;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,11 +13,13 @@ public class ContactsDialog extends JDialog {
     private final User currentUser;
     private final JList<User> contactsList;
     private final DefaultListModel<User> listModel;
+    private final EmailHistoryService emailHistoryService;
 
-    public ContactsDialog(Frame parent, ContactsController contactsController, User currentUser) {
+    public ContactsDialog(Frame parent, ContactsController contactsController, User currentUser, EmailHistoryService emailHistoryService) {
         super(parent, "Contactos", true);
         this.contactsController = contactsController;
         this.currentUser = currentUser;
+        this.emailHistoryService = emailHistoryService;
         this.listModel = new DefaultListModel<>();
         this.contactsList = new JList<>(listModel);
 
@@ -55,18 +59,55 @@ public class ContactsDialog extends JDialog {
     }
 
     private void showAddContactDialog() {
-        String email = JOptionPane.showInputDialog(this, "Ingrese el email del contacto:");
-        if (email != null && !email.trim().isEmpty()) {
-            try {
-                contactsController.addContact(email.trim());
-                loadContacts();
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this,
-                    "Error al agregar contacto: " + e.getMessage(),
+        // Crear un diálogo personalizado con autocompletado
+        JDialog dialog = new JDialog(this, "Agregar Contacto", true);
+        dialog.setSize(400, 150);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel panel = new JPanel(new GridLayout(2, 2, 5, 5));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        panel.add(new JLabel("Email:"));
+        AutoCompleteTextField emailField = new AutoCompleteTextField(emailHistoryService, currentUser);
+        panel.add(emailField);
+
+        dialog.add(panel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton addButton = new JButton("Agregar");
+        JButton cancelButton = new JButton("Cancelar");
+
+        addButton.addActionListener(e -> {
+            String email = emailField.getText().trim();
+            if (!email.isEmpty()) {
+                try {
+                    contactsController.addContact(email);
+                    // Agregar al historial de emails
+                    emailHistoryService.addToHistory(currentUser, java.util.Arrays.asList(email));
+                    loadContacts();
+                    dialog.dispose();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(dialog,
+                        "Error al agregar contacto: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(dialog,
+                    "Por favor ingrese un email válido",
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
             }
-        }
+        });
+
+        cancelButton.addActionListener(e -> dialog.dispose());
+
+        buttonPanel.add(addButton);
+        buttonPanel.add(cancelButton);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
     }
 
     private void removeSelectedContact() {

@@ -12,4 +12,5 @@ public interface UserDao {
     Optional<User> findByEmail(String email);
     List<User> findAll();
     void deleteById(UUID id);
+    void updateRole(UUID id, models.UserRole role);
 }
