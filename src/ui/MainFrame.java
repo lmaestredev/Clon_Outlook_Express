@@ -11,6 +11,7 @@ import ui.dialogs.ContactsDialog;
 import ui.dialogs.EmailHistoryDialog;
 import ui.dialogs.ServerConfigDialog;
 import ui.dialogs.UserManagementDialog;
+
 import services.EmailHistoryService;
 import utils.MailFolder;
 
@@ -92,6 +93,8 @@ public class MainFrame extends JFrame {
             composeDialog.setVisible(true);
         });
         foldersPanel.add(composeButton);
+
+
 
         // Botones solo para administradores
         if (currentUser.getRole() == models.UserRole.ADMIN) {
@@ -212,9 +215,6 @@ public class MainFrame extends JFrame {
                 var mailController = new controllers.MailController(internalMailService, currentUser);
                 var contactsController = new controllers.ContactsController(userDao, contactBookDao, currentUser);
                 var emailHistoryService = new services.EmailHistoryService(userDao);
-                
-                // Probar el autocompletado
-                emailHistoryService.testAutocomplete();
                 
                 new MainFrame(currentUser, mailController, userController, contactsController, userDao, internalMailService, emailHistoryService).setVisible(true);
             } catch (Exception e) {

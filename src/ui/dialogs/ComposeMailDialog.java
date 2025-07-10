@@ -4,7 +4,7 @@ import controllers.MailController;
 import models.Mail;
 import models.User;
 import services.EmailHistoryService;
-import ui.components.AutoCompleteTextField;
+import ui.components.ComboBoxAutoCompleteTextField;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ComposeMailDialog extends JDialog {
-    private final AutoCompleteTextField toField;
-    private final AutoCompleteTextField ccField;
-    private final AutoCompleteTextField bccField;
+    private final ComboBoxAutoCompleteTextField toField;
+    private final ComboBoxAutoCompleteTextField ccField;
+    private final ComboBoxAutoCompleteTextField bccField;
     private final JTextField subjectField;
     private final JTextArea messageArea;
     private final MailController mailController;
@@ -44,15 +44,15 @@ public class ComposeMailDialog extends JDialog {
         fieldsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         fieldsPanel.add(new JLabel("Para:"));
-        toField = new AutoCompleteTextField(emailHistoryService, currentUser);
+        toField = new ComboBoxAutoCompleteTextField(emailHistoryService, currentUser);
         fieldsPanel.add(toField);
 
         fieldsPanel.add(new JLabel("CC:"));
-        ccField = new AutoCompleteTextField(emailHistoryService, currentUser);
+        ccField = new ComboBoxAutoCompleteTextField(emailHistoryService, currentUser);
         fieldsPanel.add(ccField);
 
         fieldsPanel.add(new JLabel("BCC:"));
-        bccField = new AutoCompleteTextField(emailHistoryService, currentUser);
+        bccField = new ComboBoxAutoCompleteTextField(emailHistoryService, currentUser);
         fieldsPanel.add(bccField);
 
         fieldsPanel.add(new JLabel("Asunto:"));

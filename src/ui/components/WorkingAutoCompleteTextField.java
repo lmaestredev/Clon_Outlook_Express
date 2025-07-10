@@ -9,21 +9,19 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
-import java.util.Vector;
 
 /**
- * Campo de texto con autocompletado para direcciones de correo
+ * Campo de texto con autocompletado funcional
  */
-public class AutoCompleteTextField extends JTextField {
+public class WorkingAutoCompleteTextField extends JTextField {
     private final EmailHistoryService emailHistoryService;
     private final User currentUser;
-    private JWindow popup;
     private JList<String> suggestionList;
+    private JWindow popup;
     private DefaultListModel<String> listModel;
     private boolean isAdjusting = false;
-    private static final int MAX_SUGGESTIONS = 8;
 
-    public AutoCompleteTextField(EmailHistoryService emailHistoryService, User currentUser) {
+    public WorkingAutoCompleteTextField(EmailHistoryService emailHistoryService, User currentUser) {
         this.emailHistoryService = emailHistoryService;
         this.currentUser = currentUser;
         this.listModel = new DefaultListModel<>();
@@ -34,28 +32,31 @@ public class AutoCompleteTextField extends JTextField {
     }
 
     private void setupPopup() {
-        // Crear el popup con el frame padre como owner
-        Window owner = SwingUtilities.getWindowAncestor(this);
-        popup = new JWindow(owner);
+        // Crear el popup con owner específico
+        popup = new JWindow();
         popup.setLayout(new BorderLayout());
         
+        // Configurar la lista de sugerencias
         suggestionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         suggestionList.setFont(getFont());
         suggestionList.setBackground(Color.WHITE);
-        suggestionList.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        suggestionList.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         
+        // Crear el scroll pane
         JScrollPane scrollPane = new JScrollPane(suggestionList);
-        scrollPane.setPreferredSize(new Dimension(300, 150));
-        scrollPane.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.BLACK, 2),
-            BorderFactory.createEmptyBorder(2, 2, 2, 2)
-        ));
+        scrollPane.setPreferredSize(new Dimension(300, 120));
         popup.add(scrollPane, BorderLayout.CENTER);
         
-        // Hacer el popup siempre visible por encima
-        popup.setAlwaysOnTop(true);
+        // Eventos de la lista
+        suggestionList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1) {
+                    selectSuggestion();
+                }
+            }
+        });
         
-        // Evento para seleccionar con Enter
         suggestionList.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -63,16 +64,6 @@ public class AutoCompleteTextField extends JTextField {
                     selectSuggestion();
                 } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                     hidePopup();
-                }
-            }
-        });
-        
-        // Evento para seleccionar con clic
-        suggestionList.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 1) {
-                    selectSuggestion();
                 }
             }
         });
@@ -139,7 +130,6 @@ public class AutoCompleteTextField extends JTextField {
         addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
-                // Pequeño delay para permitir clics en la lista
                 Timer timer = new Timer(150, evt -> hidePopup());
                 timer.setRepeats(false);
                 timer.start();
@@ -163,15 +153,14 @@ public class AutoCompleteTextField extends JTextField {
             return;
         }
 
-        System.out.println("AutoCompleteTextField: Buscando sugerencias para '" + lastPart + "'");
+        System.out.println("WorkingAutoCompleteTextField: Buscando sugerencias para '" + lastPart + "'");
 
         // Buscar sugerencias
-        List<String> suggestions = emailHistoryService.searchEmails(currentUser, lastPart, MAX_SUGGESTIONS);
+        List<String> suggestions = emailHistoryService.searchEmails(currentUser, lastPart, 8);
         
-        System.out.println("AutoCompleteTextField: Sugerencias encontradas: " + suggestions);
+        System.out.println("WorkingAutoCompleteTextField: Sugerencias encontradas: " + suggestions);
         
         if (suggestions.isEmpty()) {
-            System.out.println("AutoCompleteTextField: No hay sugerencias, ocultando popup");
             hidePopup();
             return;
         }
@@ -182,8 +171,6 @@ public class AutoCompleteTextField extends JTextField {
             listModel.addElement(suggestion);
         }
 
-        System.out.println("AutoCompleteTextField: Mostrando popup con " + suggestions.size() + " sugerencias");
-        
         // Mostrar el popup
         showPopup();
         
@@ -195,36 +182,49 @@ public class AutoCompleteTextField extends JTextField {
 
     private void showPopup() {
         if (popup.isVisible()) {
-            System.out.println("AutoCompleteTextField: Popup ya está visible");
             return;
         }
 
-        // Posicionar el popup debajo del campo de texto
+        // Obtener la posición del campo de texto
         Point location = getLocationOnScreen();
         Dimension size = getSize();
         
-        // Asegurar que el popup esté en la pantalla
+        // Posicionar el popup debajo del campo
         int x = location.x;
         int y = location.y + size.height;
         
         // Verificar que no se salga de la pantalla
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        if (y + popup.getPreferredSize().height > screenSize.height) {
-            y = location.y - popup.getPreferredSize().height;
+        if (y + 120 > screenSize.height) {
+            y = location.y - 120;
+        }
+        
+        // Asegurar que el popup tenga un owner válido
+        if (popup.getOwner() == null) {
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            if (owner != null) {
+                popup = new JWindow(owner);
+                popup.setLayout(new BorderLayout());
+                JScrollPane scrollPane = new JScrollPane(suggestionList);
+                scrollPane.setPreferredSize(new Dimension(300, 120));
+                popup.add(scrollPane, BorderLayout.CENTER);
+            }
         }
         
         popup.setLocation(x, y);
-        popup.pack(); // Asegurar que el popup tenga el tamaño correcto
+        popup.pack();
         popup.setVisible(true);
         popup.toFront();
-        popup.requestFocus(); // Asegurar que el popup tenga el foco
         
-        System.out.println("AutoCompleteTextField: Popup mostrado en posición: " + x + ", " + y);
-        System.out.println("AutoCompleteTextField: Tamaño del popup: " + popup.getSize());
+        System.out.println("WorkingAutoCompleteTextField: Popup mostrado en posición: " + x + ", " + y);
+        System.out.println("WorkingAutoCompleteTextField: Popup visible: " + popup.isVisible());
+        System.out.println("WorkingAutoCompleteTextField: Popup owner: " + popup.getOwner());
     }
 
     private void hidePopup() {
-        popup.setVisible(false);
+        if (popup != null) {
+            popup.setVisible(false);
+        }
     }
 
     private void selectSuggestion() {
