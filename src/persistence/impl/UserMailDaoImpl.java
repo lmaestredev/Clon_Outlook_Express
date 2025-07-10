@@ -84,7 +84,6 @@ public class UserMailDaoImpl implements UserMailDao {
                 UUID senderId = UUID.fromString(rs.getString("sender_id"));
                 Optional<User> sender = userDao.findById(senderId);
 
-                // Cargar destinatarios reales
                 List<User> recipients = new ArrayList<>();
                 String recipientsSql = "SELECT recipient_id FROM mail_recipients WHERE mail_id = ?";
                 try (PreparedStatement recipientsPs = connection.prepareStatement(recipientsSql)) {

@@ -12,13 +12,35 @@ Este proyecto es un cliente de correo electrónico de escritorio inspirado en Ou
 - **src/ui/**: Interfaz gráfica principal (`MainFrame`) y diálogos (`ComposeMailDialog`, `ContactsDialog`, `LoginDialog`).
 - **config/**: Configuración de la base de datos.
 
-## Funcionalidades Básicas
+## Funcionalidades Principales
 
-- **Login y Registro**: Inicio de sesión por email y registro de nuevos usuarios.
-- **Gestión de correos**: Enviar, recibir, leer, marcar como leído/no leído, eliminar y ver correos enviados y recibidos.
-- **Borradores**: Guardar y editar borradores de correos.
-- **Contactos**: Agenda personal de contactos, agregar y eliminar contactos.
-- **Persistencia**: Todos los datos se guardan en una base de datos H2 local, asegurando que nada se pierde al cerrar la app.
+### 🔐 Autenticación y Usuarios
+- **Sistema de login**: Inicio de sesión por email con validación de credenciales
+- **Registro de usuarios**: Creación de nuevas cuentas de usuario
+- **Gestión de perfiles**: Cada usuario tiene su propio espacio de trabajo
+
+### 📧 Gestión de Correos
+- **Envío de correos**: Composición y envío de mensajes internos
+- **Bandeja de entrada**: Visualización y gestión de correos recibidos
+- **Correos enviados**: Historial de mensajes enviados
+- **Marcado de estado**: Marcar como leído/no leído
+- **Borradores**: Guardar y editar correos en progreso
+
+### 👥 Gestión de Contactos
+- **Agenda personal**: Lista de contactos por usuario
+- **Agregar contactos**: Creación de nuevos contactos
+- **Eliminar contactos**: Gestión de la lista de contactos
+- **Autocompletado**: Sugerencias automáticas al escribir direcciones
+
+### 💾 Persistencia de Datos
+- **Base de datos H2**: Almacenamiento local de todos los datos
+- **Persistencia completa**: No se pierden datos al cerrar la aplicación
+- **Datos multiusuario**: Separación de datos por usuario
+
+### 🎨 Interfaz de Usuario
+- **Interfaz moderna**: Diseño limpio y intuitivo con Swing
+- **Diálogos especializados**: Ventanas modales para tareas específicas
+- **Navegación fluida**: Transiciones suaves entre funcionalidades
 
 ## Tecnologías Utilizadas
 

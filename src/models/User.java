@@ -8,12 +8,22 @@ public class User {
     private String name;
     private String lastName;
     private String email;
+    private UserRole role;
 
     public User(UUID id, String name, String lastName, String email) {
         this.id = id;
         this.name = name;
         this.lastName = lastName;
         this.email = email;
+        this.role = UserRole.USER; // Por defecto todos los usuarios tienen rol USER
+    }
+
+    public User(UUID id, String name, String lastName, String email, UserRole role) {
+        this.id = id;
+        this.name = name;
+        this.lastName = lastName;
+        this.email = email;
+        this.role = role;
     }
 
     public UUID getId() {
@@ -30,6 +40,14 @@ public class User {
 
     public String getEmail() {
         return email;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
     }
 
     public void setName(String name) {

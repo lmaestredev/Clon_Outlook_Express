@@ -1,5 +1,6 @@
 package services;
 
+import config.MailServerConfig;
 import models.Mail;
 import models.User;
 import models.UserMail;
@@ -17,11 +18,22 @@ public class InternalMailService {
     private final MailDao mailDao;
     private final UserMailDao userMailDao;
     private final UserDao userDao;
+    private MailServerConfig serverConfig;
 
     public InternalMailService(MailDao mailDao, UserMailDao userMailDao, UserDao userDao) {
         this.mailDao = mailDao;
         this.userMailDao = userMailDao;
         this.userDao = userDao;
+        // Configuración por defecto para simulación
+        this.serverConfig = new MailServerConfig("smtp.palermo.edu", 587, "", "", true, true);
+    }
+
+    public void setServerConfig(MailServerConfig config) {
+        this.serverConfig = config;
+    }
+
+    public MailServerConfig getServerConfig() {
+        return serverConfig;
     }
 
     public List<User> findUsersByEmails(String[] emails) {
@@ -129,6 +141,9 @@ public class InternalMailService {
             throw new IllegalArgumentException("Se requiere al menos un destinatario");
         }
 
+        // Simular envío usando la configuración del servidor
+        simulateSendMail(sender, recipients, cc, bcc, subject, message);
+
         Mail mail = new Mail(
             UUID.randomUUID(),
             sender,
@@ -155,5 +170,28 @@ public class InternalMailService {
         }
 
         userMailDao.save(new UserMail(sender, mail, MailFolder.SENT));
+    }
+
+    /**
+     * Simula el envío de correo usando la configuración del servidor
+     * En una implementación real, aquí se conectaría al servidor SMTP
+     */
+    private void simulateSendMail(User sender, List<User> recipients, List<User> cc, List<User> bcc, String subject, String message) {
+        System.out.println("=== SIMULACIÓN DE ENVÍO DE CORREO ===");
+        System.out.println("Servidor SMTP: " + serverConfig.getHost());
+        System.out.println("Puerto: " + serverConfig.getPort());
+        System.out.println("Autenticación: " + (serverConfig.isAuth() ? "Sí" : "No"));
+        System.out.println("STARTTLS: " + (serverConfig.isStarttls() ? "Sí" : "No"));
+        System.out.println("De: " + sender.getEmail() + "@palermo.edu");
+        System.out.println("Para: " + recipients.stream().map(u -> u.getEmail() + "@palermo.edu").toList());
+        if (!cc.isEmpty()) {
+            System.out.println("CC: " + cc.stream().map(u -> u.getEmail() + "@palermo.edu").toList());
+        }
+        if (!bcc.isEmpty()) {
+            System.out.println("BCC: " + bcc.stream().map(u -> u.getEmail() + "@palermo.edu").toList());
+        }
+        System.out.println("Asunto: " + subject);
+        System.out.println("Mensaje: " + message.substring(0, Math.min(message.length(), 100)) + (message.length() > 100 ? "..." : ""));
+        System.out.println("=== FIN SIMULACIÓN ===");
     }
 } 
